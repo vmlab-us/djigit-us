@@ -12,179 +12,284 @@
 
     gtag('config', 'G-Y2SHDM3Z16');
   </script>
-  <title>DJIGIT US</title>  
-<link rel="icon" type="image/png" href="/img/DJIGIT_logo_round_final-removebg.png">
-<link rel="stylesheet" href="/styles.css?v=11" />
+  <title>Contact DJIGIT US | Auto Broker in Los Angeles</title>
+  <link rel="icon" type="image/png" href="/img/DJIGIT_logo_round_final-removebg.png">
+  <link rel="stylesheet" href="/styles.css?v=11" />
 
-<style>
-  /* Contact page layout (keep the card nice, but don't break the shared header) */
-  body{
-    margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:#c7b07e;           /* как на Credit Application */
-    color:#111;
-  }
+  <style>
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background:#c7b07e;
+      color:#111;
+    }
 
-  .page-content{
-  padding: 40px 16px;
-}
+    .page-content{
+      padding:64px 16px 52px;
+    }
 
- .card{
-  margin: 40px auto;
-  background:#fff;
-  color:#000;
-  border-radius:20px;
-  padding:32px 24px;
-  width:100%;
-  max-width:380px;
-  text-align:center;
-  box-shadow:0 20px 40px rgba(0,0,0,0.25);
-}
+    .contact-card{
+      margin:0 auto;
+      background:#fff;
+      color:#000;
+      border-radius:26px;
+      padding:38px 28px 32px;
+      width:100%;
+      max-width:520px;
+      text-align:center;
+      box-shadow:0 24px 60px rgba(0,0,0,0.28);
+      border:1px solid rgba(0,0,0,0.06);
+    }
 
-  .logo{ width:120px; margin:0 auto 16px; display:block; }
-  h1{ font-size:22px; margin:12px 0 4px; }
-  .title{ font-size:15px; color:#555; margin-bottom:20px; }
+    .contact-logo{
+      width:132px;
+      height:132px;
+      object-fit:contain;
+      margin:0 auto 18px;
+      display:block;
+      border-radius:50%;
+    }
 
-  .btn{
-    display:block;
-    text-decoration:none;
-    padding:14px;
-    margin:10px 0;
-    border-radius:12px;
-    font-weight:600;
-  }
-  .primary{ background:#000; color:#fff; }
-  .secondary{ background:#f2f2f2; color:#000; }
-  /* === Mobile scroll jump killer (override global styles) === */
-html, body {
-  height: auto !important;
-  min-height: 0 !important;
-  scroll-behavior: auto !important;
-  scroll-snap-type: none !important;
-  overflow-anchor: none !important; /* prevents "auto jump" in Chrome */
-}
+    .contact-card h1{
+      font-size:28px;
+      line-height:1.15;
+      margin:10px 0 6px;
+      letter-spacing:0.02em;
+    }
 
-body {
-  display: block !important;        /* kill any flex centering from global css */
-}
+    .contact-title{
+      font-size:16px;
+      font-weight:700;
+      color:#3d3320;
+      margin-bottom:14px;
+    }
 
-.page-content {
-  height: auto !important;
-  min-height: 0 !important;
-  display: block !important;
-  scroll-snap-align: none !important;
-}
+    .contact-intro{
+      font-size:15px;
+      line-height:1.55;
+      color:#333;
+      margin:0 auto 18px;
+      max-width:420px;
+    }
 
-.card, footer, .footer, .footer-inner, .footer-row {
-  scroll-snap-align: none !important;
-}
-</style>
-<!-- Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1385432075932608');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1385432075932608&ev=PageView&noscript=1"
-/></noscript>
-<!-- End Meta Pixel Code -->
+    .contact-location{
+      font-size:14px;
+      color:#66583b;
+      margin-bottom:24px;
+      font-weight:600;
+    }
+
+    .btn{
+      display:block;
+      text-decoration:none;
+      padding:15px 16px;
+      margin:10px 0;
+      border-radius:14px;
+      font-weight:700;
+      transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 10px 22px rgba(0,0,0,0.14);
+    }
+
+    .primary{
+      background:#000;
+      color:#fff;
+    }
+
+    .secondary{
+      background:#f3efe4;
+      color:#000;
+      border:1px solid rgba(0,0,0,0.08);
+    }
+
+    .button-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:4px;
+    }
+
+    .button-grid .btn{
+      margin:0;
+    }
+
+    .wide-action{
+      margin-top:10px;
+    }
+
+    .contact-note{
+      margin-top:22px;
+      padding-top:18px;
+      border-top:1px solid rgba(0,0,0,0.08);
+      font-size:13px;
+      line-height:1.5;
+      color:#555;
+    }
+
+    html, body {
+      height:auto !important;
+      min-height:0 !important;
+      scroll-behavior:auto !important;
+      scroll-snap-type:none !important;
+      overflow-anchor:none !important;
+    }
+
+    body {
+      display:block !important;
+    }
+
+    .page-content {
+      height:auto !important;
+      min-height:0 !important;
+      display:block !important;
+      scroll-snap-align:none !important;
+    }
+
+    .contact-card, footer, .footer, .footer-inner, .footer-row {
+      scroll-snap-align:none !important;
+    }
+
+    @media (max-width:560px){
+      .page-content{
+        padding:42px 14px 40px;
+      }
+
+      .contact-card{
+        padding:30px 20px 26px;
+        border-radius:22px;
+      }
+
+      .contact-card h1{
+        font-size:24px;
+      }
+
+      .button-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1385432075932608');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1385432075932608&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
 </head>
 
 <body>
- <header class="site-header">
-  <div class="nav-wrap">
-    <a class="brand" href="/">
-      <img src="/img/DJIGIT_logo_round_final-removebg.png" alt="DJIGIT US" />
-    </a>
-
-    <nav class="nav-links" aria-label="Primary">
-      <a href="/" class="nav-link">Home</a>
-      <a href="/application/" class="nav-link">Credit Application</a>
-      <a href="/contact/" class="nav-link">Contact</a>
-      <a href="https://wa.me/18185352313" class="nav-wa" target="_blank" rel="noopener">WhatsApp</a>
-    </nav>
-
-    <div class="nav-mobile">
-      <a href="https://wa.me/18185352313" class="nav-wa" target="_blank" rel="noopener">WhatsApp</a>
-      <button class="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </div>
-
-  <nav id="mobileMenu" aria-label="Mobile">
-    <a href="/" class="mobile-link">Home</a>
-    <a href="/application/" class="mobile-link">Credit Application</a>
-    <a href="/contact/" class="mobile-link">Contact</a>
-  </nav>
-</header>
-  <main class="page-content">
-  <div class="card">
-
-    <img src="New LOGO.jpg" alt="DJIGIT US" class="logo" />
-
-    <h1>DJIGIT US LLC</h1>
-    <div class="title">Auto Broker / Auto Dealer<br></div>
-
-    <!-- SAVE CONTACT -->
-    <a class="btn primary" href="DJIGIT_US_LLC.vcf">
-      📲 Save Contact
-    </a>
-
-    <!-- ACTIONS -->
-    <a class="btn secondary" href="tel:+18185352313">📞 Call</a>
-    <a class="btn secondary" href="mailto:djigitusllc@gmail.com">✉️ Email</a>
-    <a class="btn secondary" href="https://www.instagram.com/djigit.us/" target="_blank">
-      📷 Instagram
-    <a class="btn secondary" href="https://djigit.us" target="_blank">
-  🌐 Website
-</a>
-
- </div>
-</main>
-<!-- FOOTER -->
-    <footer class="footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      DJIGIT US — SPIRIT OF ROADS
-    </div>
-
-    <div class="footer-row">
-      Independent dealership & auto-broker · LA County, CA
-    </div>
-    <div class="footer-row">
-      Clean-title cars · Broker service · DMV paperwork assistance
-    </div>
-
-    <div class="footer-row">
-      📧 <a href="mailto:djigitusllc@gmail.com">djigitusllc@gmail.com</a>
-      &nbsp;·&nbsp;
-      💬 <a href="https://wa.me/18185352313" target="_blank" rel="noopener">
-        Chat on WhatsApp
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="/">
+        <img src="/img/DJIGIT_logo_round_final-removebg.png" alt="DJIGIT US" />
       </a>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/application/" class="nav-link">Credit Application</a>
+        <a href="/contact/" class="nav-link">Contact</a>
+        <a href="https://wa.me/18185352313" class="nav-wa" target="_blank" rel="noopener">WhatsApp</a>
+      </nav>
+
+      <div class="nav-mobile">
+        <a href="https://wa.me/18185352313" class="nav-wa" target="_blank" rel="noopener">WhatsApp</a>
+        <button class="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
     </div>
 
-    <div class="footer-row footer-row--small">
-      10505 Victory Blvd, Unit L, North Hollywood, CA 91606 · By appointment only
-    </div>
+    <nav id="mobileMenu" aria-label="Mobile">
+      <a href="/" class="mobile-link">Home</a>
+      <a href="/application/" class="mobile-link">Credit Application</a>
+      <a href="/contact/" class="mobile-link">Contact</a>
+    </nav>
+  </header>
 
-    <div class="footer-row footer-row--small">
-      Written communication preferred for clarity and records.
-    </div>
+  <main class="page-content">
+    <section class="contact-card" aria-label="DJIGIT US contact card">
+      <img src="New LOGO.jpg" alt="DJIGIT US" class="contact-logo" />
 
-    <div class="footer-row footer-row--small">
-      © 2026 DJIGIT US LLC. All rights reserved.
+      <h1>DJIGIT US LLC</h1>
+      <div class="contact-title">Auto Broker &amp; Independent Dealership</div>
+
+      <p class="contact-intro">
+        Helping customers in Los Angeles County find, lease, finance, and buy vehicles with clear communication and paperwork support.
+      </p>
+
+      <div class="contact-location">
+        LA County, California · By appointment only
+      </div>
+
+      <a class="btn primary" href="DJIGIT_US_LLC.vcf">
+        📲 Save Contact
+      </a>
+
+      <div class="button-grid">
+        <a class="btn secondary" href="tel:+18185352313">📞 Call</a>
+        <a class="btn secondary" href="mailto:djigitusllc@gmail.com">✉️ Email</a>
+        <a class="btn secondary" href="https://www.instagram.com/djigit.us/" target="_blank" rel="noopener">📷 Instagram</a>
+        <a class="btn secondary" href="https://djigit.us" target="_blank" rel="noopener">🌐 Website</a>
+      </div>
+
+      <a class="btn secondary wide-action" href="/application/">
+        Credit Application
+      </a>
+
+      <div class="contact-note">
+        Independent dealership &amp; auto broker · Clean-title cars · DMV paperwork assistance<br />
+        Written communication preferred for clarity and records.
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        DJIGIT US — SPIRIT OF ROADS
+      </div>
+
+      <div class="footer-row">
+        Independent dealership & auto-broker · LA County, CA
+      </div>
+      <div class="footer-row">
+        Clean-title cars · Broker service · DMV paperwork assistance
+      </div>
+
+      <div class="footer-row">
+        📧 <a href="mailto:djigitusllc@gmail.com">djigitusllc@gmail.com</a>
+        &nbsp;·&nbsp;
+        💬 <a href="https://wa.me/18185352313" target="_blank" rel="noopener">
+          Chat on WhatsApp
+        </a>
+      </div>
+
+      <div class="footer-row footer-row--small">
+        10505 Victory Blvd, Unit L, North Hollywood, CA 91606 · By appointment only
+      </div>
+
+      <div class="footer-row footer-row--small">
+        Written communication preferred for clarity and records.
+      </div>
+
+      <div class="footer-row footer-row--small">
+        © 2026 DJIGIT US LLC. All rights reserved.
+      </div>
     </div>
-  </div>
-</footer>
-<script src="/js/nav.js"></script>
+  </footer>
+  <script src="/js/nav.js"></script>
 </body>
 </html>
