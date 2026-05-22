@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const siteLogo = "/img/djigit-logo-white.svg";
+  const siteLogo = "/img/djigit-logo-white.png";
 
   const sharedStyle = document.createElement("style");
   sharedStyle.textContent = `
@@ -31,13 +31,13 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
   document.head.appendChild(sharedStyle);
 
-  document.querySelectorAll('img[src*="DJIGIT_logo_round_final-removebg.png"]').forEach((img) => {
+  document.querySelectorAll('img[src*="DJIGIT_logo_round_final-removebg.png"], img[src*="djigit-logo-white.svg"]').forEach((img) => {
     img.src = siteLogo;
   });
 
   document.querySelectorAll('link[rel~="icon"]').forEach((icon) => {
     icon.href = siteLogo;
-    icon.type = "image/svg+xml";
+    icon.type = "image/png";
   });
 
   const burger = document.querySelector("button.burger");
