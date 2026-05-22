@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="DJIGIT US Spirit of Roads logo">
+  <defs>
+    <style>
+      .mark{fill:#f4f1e8;stroke:#f4f1e8;stroke-linecap:round;stroke-linejoin:round}
+      .line{fill:none;stroke:#f4f1e8;stroke-width:14;stroke-linecap:round;stroke-linejoin:round}
+      .thin{fill:none;stroke:#f4f1e8;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+      .text{fill:#f4f1e8;font-family:Arial, Helvetica, sans-serif;font-weight:900;letter-spacing:18px}
+      .small{fill:#f4f1e8;font-family:Arial, Helvetica, sans-serif;font-weight:700;letter-spacing:12px}
+    </style>
+  </defs>
+  <rect width="800" height="800" fill="transparent"/>
+  <circle cx="400" cy="400" r="365" class="thin"/>
+  <circle cx="400" cy="400" r="342" class="thin"/>
+  <path id="topArc" d="M165 142 A330 330 0 0 1 635 142" fill="none"/>
+  <path id="bottomArc" d="M160 655 A330 330 0 0 0 640 655" fill="none"/>
+  <text class="small" font-size="38"><textPath href="#topArc" startOffset="50%" text-anchor="middle">SPIRIT OF ROADS</textPath></text>
+  <text class="small" font-size="38"><textPath href="#bottomArc" startOffset="50%" text-anchor="middle">SPIRIT OF ROADS</textPath></text>
+  <text x="400" y="285" class="text" font-size="112" text-anchor="middle">DJIGIT</text>
+  <text x="400" y="625" class="text" font-size="104" text-anchor="middle">US</text>
+  <path class="mark" d="M92 447 C120 392 218 355 327 333 C387 321 464 319 520 335 C557 346 581 369 602 392 C647 396 700 405 722 435 C740 459 724 493 690 501 L113 501 C83 492 76 475 92 447Z"/>
+  <path d="M240 386 C270 363 333 349 397 349 L438 349 C466 350 488 359 506 374 L544 410 L186 410 C198 401 216 393 240 386Z" fill="#050505"/>
+  <path d="M305 356 L335 410 M430 350 L463 410" class="thin"/>
+  <circle cx="219" cy="486" r="43" fill="#050505"/>
+  <circle cx="219" cy="486" r="27" class="thin"/>
+  <circle cx="579" cy="486" r="43" fill="#050505"/>
+  <circle cx="579" cy="486" r="27" class="thin"/>
+  <circle cx="219" cy="486" r="8" class="mark"/>
+  <circle cx="579" cy="486" r="8" class="mark"/>
+  <path d="M75 520 H725 M115 545 H685 M155 570 H645" class="line"/>
+  <text x="230" y="595" class="mark" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900">★</text>
+  <text x="535" y="595" class="mark" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="900">★</text>
+</svg>
