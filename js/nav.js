@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const siteLogo = "/img/djigit-logo-white.svg";
+
   const sharedStyle = document.createElement("style");
   sharedStyle.textContent = `
     .site-header{
@@ -29,6 +31,15 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
   document.head.appendChild(sharedStyle);
 
+  document.querySelectorAll('img[src*="DJIGIT_logo_round_final-removebg.png"]').forEach((img) => {
+    img.src = siteLogo;
+  });
+
+  document.querySelectorAll('link[rel~="icon"]').forEach((icon) => {
+    icon.href = siteLogo;
+    icon.type = "image/svg+xml";
+  });
+
   const burger = document.querySelector("button.burger");
   const menu = document.getElementById("mobileMenu");
 
@@ -53,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     footer.innerHTML = `
       <div class="premium-footer-inner">
         <div>
-          <img class="footer-logo" src="/img/DJIGIT_logo_round_final-removebg.png" alt="DJIGIT US" />
+          <img class="footer-logo" src="${siteLogo}" alt="DJIGIT US" />
           <p class="footer-copy">DJIGIT US LLC is an independent auto broker and dealership based in Los Angeles County. We help customers find, lease, finance, and buy vehicles with clear communication and paperwork support.</p>
         </div>
         <div>
