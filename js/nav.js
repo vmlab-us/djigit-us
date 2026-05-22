@@ -1,25 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const burger = document.querySelector("button.burger");
-  const menu = document.getElementById("mobileMenu");
+  const sharedStyle = document.createElement("style");
+  sharedStyle.textContent = `
+    .site-header{
+      position:sticky !important;
+      top:0 !important;
+      left:0 !important;
+      right:0 !important;
+      z-index:9999 !important;
+      background:rgba(0,0,0,.94) !important;
+      border-bottom:1px solid rgba(215,173,74,.22) !important;
+      backdrop-filter:blur(14px) !important;
+      -webkit-backdrop-filter:blur(14px) !important;
+      box-shadow:0 10px 28px rgba(0,0,0,.28) !important;
+    }
 
-  if (burger && menu) {
-    burger.addEventListener("click", () => {
-      const isOpen = menu.classList.toggle("open");
-      burger.classList.toggle("is-open", isOpen);
-      burger.setAttribute("aria-expanded", String(isOpen));
-    });
+    #mobileMenu{
+      z-index:9998 !important;
+    }
 
-    menu.querySelectorAll("a").forEach((a) => {
-      a.addEventListener("click", () => {
-        menu.classList.remove("open");
-        burger.classList.remove("is-open");
-        burger.setAttribute("aria-expanded", "false");
-      });
-    });
-  }
-
-  const footerStyle = document.createElement("style");
-  footerStyle.textContent = `
     .premium-footer{
       background:#0b0b0a !important;
       color:#fff !important;
@@ -101,7 +99,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   `;
-  document.head.appendChild(footerStyle);
+  document.head.appendChild(sharedStyle);
+
+  const burger = document.querySelector("button.burger");
+  const menu = document.getElementById("mobileMenu");
+
+  if (burger && menu) {
+    burger.addEventListener("click", () => {
+      const isOpen = menu.classList.toggle("open");
+      burger.classList.toggle("is-open", isOpen);
+      burger.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    menu.querySelectorAll("a").forEach((a) => {
+      a.addEventListener("click", () => {
+        menu.classList.remove("open");
+        burger.classList.remove("is-open");
+        burger.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
 
   const footer = document.querySelector(".premium-footer");
   if (footer) {
