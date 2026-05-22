@@ -35,11 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     img.src = siteLogo;
   });
 
-  document.querySelectorAll('link[rel~="icon"]').forEach((icon) => {
-    icon.href = siteLogo;
-    icon.type = "image/png";
-  });
-
   const burger = document.querySelector("button.burger");
   const menu = document.getElementById("mobileMenu");
 
