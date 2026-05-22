@@ -18,6 +18,91 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const footerStyle = document.createElement("style");
+  footerStyle.textContent = `
+    .premium-footer{
+      background:#0b0b0a !important;
+      color:#fff !important;
+      border-top:1px solid rgba(215,173,74,.45) !important;
+      padding:42px 16px 20px !important;
+      scroll-snap-align:none !important;
+    }
+
+    .premium-footer-inner{
+      width:100% !important;
+      max-width:1120px !important;
+      margin:0 auto !important;
+      display:grid !important;
+      grid-template-columns:1.35fr .9fr 1.2fr !important;
+      gap:44px !important;
+      align-items:start !important;
+    }
+
+    .footer-logo{
+      width:108px !important;
+      height:108px !important;
+      object-fit:contain !important;
+      display:block !important;
+      margin:0 0 16px !important;
+    }
+
+    .footer-copy{
+      max-width:420px !important;
+      color:#d7d2c8 !important;
+      line-height:1.6 !important;
+      font-size:15px !important;
+      margin:0 !important;
+    }
+
+    .footer-heading{
+      color:#d7ad4a !important;
+      font-weight:900 !important;
+      text-transform:uppercase !important;
+      letter-spacing:.08em !important;
+      margin:0 0 16px !important;
+      font-size:16px !important;
+    }
+
+    .footer-links,
+    .footer-contact{
+      display:grid !important;
+      gap:10px !important;
+      color:#d7d2c8 !important;
+      font-size:15px !important;
+      line-height:1.35 !important;
+    }
+
+    .footer-links a,
+    .footer-contact a{
+      color:#d7d2c8 !important;
+      text-decoration:none !important;
+    }
+
+    .footer-links a:hover,
+    .footer-contact a:hover{
+      color:#f1d893 !important;
+    }
+
+    .copyright{
+      width:100% !important;
+      max-width:1120px !important;
+      margin:30px auto 0 !important;
+      padding-top:18px !important;
+      border-top:1px solid rgba(215,173,74,.22) !important;
+      text-align:center !important;
+      color:#c4bcac !important;
+      font-size:13px !important;
+    }
+
+    @media(max-width:860px){
+      .premium-footer-inner{
+        grid-template-columns:1fr !important;
+        gap:28px !important;
+      }
+    }
+  `;
+  document.head.appendChild(footerStyle);
+
   const footer = document.querySelector(".premium-footer");
   if (footer) {
     footer.innerHTML = `
