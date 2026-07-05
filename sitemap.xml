@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://djigit.us/</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-07-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://djigit.us/img/shapka.png</image:loc>
+      <image:title>DJIGIT US Auto Broker and Independent Dealership in Los Angeles County</image:title>
+      <image:caption>DJIGIT US helps customers in Los Angeles County find, lease, finance, and buy vehicles.</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://djigit.us/img/DJIGIT_logo_round_final-removebg.png</image:loc>
+      <image:title>DJIGIT US LLC logo</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://djigit.us/application/</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-07-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://djigit.us/contact/</loc>
-    <lastmod>2026-05-22</lastmod>
+    <lastmod>2026-07-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
