@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
+User-agent: Googlebot-Image
+Allow: /img/
+
 Sitemap: https://djigit.us/sitemap.xml
