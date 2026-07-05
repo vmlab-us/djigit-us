@@ -1,0 +1,24 @@
+{
+  "name": "DJIGIT US Auto Broker",
+  "short_name": "DJIGIT US",
+  "description": "Independent auto broker and dealership serving Los Angeles County, California.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090909",
+  "theme_color": "#090909",
+  "icons": [
+    {
+      "src": "/img/DJIGIT_logo_round_final-removebg.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/DJIGIT_logo_round_final-removebg.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
