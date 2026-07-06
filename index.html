@@ -130,6 +130,39 @@
   }
   .hero-premium:before{display:none;}
 }
+
+.hero-premium:before{
+  display:none !important;
+}
+
+.hero-premium h1{
+  max-width:660px;
+  font-size:clamp(36px,4.6vw,58px);
+  line-height:1.04;
+  letter-spacing:.006em;
+}
+
+.hero-subtitle{
+  max-width:620px;
+  font-size:clamp(18px,1.85vw,24px);
+  line-height:1.32;
+  font-weight:700;
+}
+
+.hero-copy{
+  max-width:570px;
+  font-size:17px;
+  line-height:1.58;
+}
+
+@media(max-width:900px){
+  .hero-premium h1{
+    font-size:clamp(34px,7vw,48px);
+  }
+  .hero-subtitle{
+    font-size:clamp(18px,4.2vw,22px);
+  }
+}
   </style>
 
   <script>
