@@ -131,6 +131,13 @@
   .hero-premium:before{display:none;}
 }
 
+.hero-premium{
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.70) 36%,rgba(0,0,0,.22) 68%,rgba(0,0,0,.04) 100%),
+    linear-gradient(180deg,rgba(0,0,0,.02) 0%,rgba(0,0,0,.12) 58%,rgba(0,0,0,.46) 100%),
+    url('/img/shapka.png') center right/cover no-repeat !important;
+}
+
 .hero-premium:before{
   display:none !important;
 }
@@ -156,6 +163,12 @@
 }
 
 @media(max-width:900px){
+  .hero-premium{
+    background:
+      linear-gradient(90deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.66) 58%,rgba(0,0,0,.26) 100%),
+      linear-gradient(180deg,rgba(0,0,0,.04) 0%,rgba(0,0,0,.44) 100%),
+      url('/img/shapka.png') center/cover no-repeat !important;
+  }
   .hero-premium h1{
     font-size:clamp(32px,6.4vw,44px);
   }
