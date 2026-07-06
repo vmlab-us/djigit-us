@@ -176,6 +176,77 @@
     font-size:clamp(18px,4.2vw,22px);
   }
 }
+
+.faq-section{
+  background:#0b0b0a;
+  padding:54px 16px 58px;
+  border-top:1px solid rgba(215,173,74,.22);
+}
+
+.faq-section .wrap{
+  max-width:980px;
+}
+
+.faq-label{
+  color:var(--gold);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-weight:900;
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+.faq-section h2{
+  margin:0 0 24px;
+  font-size:clamp(28px,3.3vw,40px);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+
+.faq-list{
+  display:grid;
+  gap:12px;
+}
+
+.faq-list details{
+  border:1px solid rgba(215,173,74,.24);
+  border-radius:10px;
+  background:rgba(255,255,255,.025);
+  overflow:hidden;
+}
+
+.faq-list summary{
+  cursor:pointer;
+  list-style:none;
+  padding:18px 20px;
+  color:#fff;
+  font-weight:900;
+  letter-spacing:.035em;
+}
+
+.faq-list summary::-webkit-details-marker{
+  display:none;
+}
+
+.faq-list p{
+  margin:0;
+  padding:0 20px 18px;
+  color:#d7d2c8;
+  font-size:15px;
+  line-height:1.55;
+}
+
+@media(max-width:520px){
+  .faq-section{
+    padding:42px 12px 46px;
+  }
+  .faq-list summary{
+    padding:16px;
+  }
+  .faq-list p{
+    padding:0 16px 16px;
+  }
+}
   </style>
 
   <script>
@@ -226,17 +297,17 @@
       <div class="divider"></div>
       <p class="section-copy">DJIGIT US is built for customers who want a simpler car buying or leasing process: vehicle search, payment options, paperwork support, and clear communication.</p>
       <div class="service-grid" id="how-it-works">
-        <article class="service"><div class="service-icon">⌕</div><h3>Find the Right Vehicle</h3><p>We search available options based on your needs, timing, and budget.</p></article>
-        <article class="service"><div class="service-icon">◇</div><h3>Lease or Finance</h3><p>Flexible leasing and financing support tailored to your situation.</p></article>
-        <article class="service"><div class="service-icon">✓</div><h3>Paperwork Support</h3><p>We help with DMV paperwork, title, registration, and final steps.</p></article>
-        <article class="service"><div class="service-icon">↗</div><h3>Drive With Confidence</h3><p>Clear communication and support throughout the process.</p></article>
+        <article class="service"><div class="service-icon">01</div><h3>Tell us what car you need</h3><p>Share the vehicle, timing, budget, and preferred lease or finance direction.</p></article>
+        <article class="service"><div class="service-icon">02</div><h3>We check available options</h3><p>We review matching vehicles and explain practical next steps in writing.</p></article>
+        <article class="service"><div class="service-icon">03</div><h3>Start online when ready</h3><p>Begin the application online only when you are ready to move forward.</p></article>
+        <article class="service"><div class="service-icon">04</div><h3>Move forward with support</h3><p>Get help with communication, documents, and paperwork through the process.</p></article>
       </div>
     </section>
 
     <section class="trust-row" aria-label="DJIGIT US highlights">
-      <div class="trust-item"><div class="trust-icon">✓</div><div><div class="trust-title">Independent</div><div class="trust-text">Objective and client-focused broker support.</div></div></div>
-      <div class="trust-item"><div class="trust-icon">◇</div><div><div class="trust-title">Transparent</div><div class="trust-text">Clear communication, honest process, no surprises.</div></div></div>
-      <div class="trust-item"><div class="trust-icon">□</div><div><div class="trust-title">Full Support</div><div class="trust-text">From vehicle search to final paperwork.</div></div></div>
+      <div class="trust-item"><div class="trust-icon">✓</div><div><div class="trust-title">Licensed California auto broker</div><div class="trust-text">Independent support for vehicle search, lease, and finance options.</div></div></div>
+      <div class="trust-item"><div class="trust-icon">◇</div><div><div class="trust-title">Online start available</div><div class="trust-text">You can begin with a request or application from the website.</div></div></div>
+      <div class="trust-item"><div class="trust-icon">□</div><div><div class="trust-title">Written communication available</div><div class="trust-text">Clear next steps can be shared in writing before you move forward.</div></div></div>
     </section>
   </main>
 
@@ -244,18 +315,32 @@
     <div class="wrap">
       <div class="inventory-head"><div><div class="inventory-label">Popular requests</div><h2>Tell us what car you need.</h2></div><a class="inventory-link" href="/contact/">Request a Car</a></div>
       <div class="inventory-grid-new">
-        <article class="vehicle-card"><img src="/img/car-camry.png" alt="Toyota Camry SE 2026" /><div class="vehicle-body"><div class="vehicle-name">Toyota Camry SE 2026*</div><div class="vehicle-meta">Sample listing · actual availability varies</div><div class="vehicle-price">Only $309/month</div></div></article>
-        <article class="vehicle-card"><img src="/img/car-sportage.png" alt="Kia Sportage Hybrid 2026" /><div class="vehicle-body"><div class="vehicle-name">Kia Sportage Hybrid 2026*</div><div class="vehicle-meta">Sample listing · actual availability varies</div><div class="vehicle-price">Only $389/month</div></div></article>
-        <article class="vehicle-card"><img src="/img/honda-crv.png" alt="Honda CRV Sport Hybrid 2026" /><div class="vehicle-body"><div class="vehicle-name">Honda CR-V Sport Hybrid 2026*</div><div class="vehicle-meta">Sample listing · actual availability varies</div><div class="vehicle-price">Only $409/month</div></div></article>
+        <article class="vehicle-card"><img src="/img/car-camry.png" alt="Toyota Camry SE 2026" /><div class="vehicle-body"><div class="vehicle-name">Toyota Camry SE 2026*</div><div class="vehicle-meta">Example request: lease / finance</div><div class="vehicle-price">Sample payment example</div></div></article>
+        <article class="vehicle-card"><img src="/img/car-sportage.png" alt="Kia Sportage Hybrid 2026" /><div class="vehicle-body"><div class="vehicle-name">Kia Sportage Hybrid 2026*</div><div class="vehicle-meta">Example request: lease / finance</div><div class="vehicle-price">Terms vary</div></div></article>
+        <article class="vehicle-card"><img src="/img/honda-crv.png" alt="Honda CRV Sport Hybrid 2026" /><div class="vehicle-body"><div class="vehicle-name">Honda CR-V Sport Hybrid 2026*</div><div class="vehicle-meta">Example request: lease / finance</div><div class="vehicle-price">Sample payment example</div></div></article>
       </div>
       <p class="inventory-note">* These are sample listings of popular vehicles. Actual inventory, pricing, terms, and availability vary. Contact DJIGIT US for current options.</p>
     </div>
   </section>
 
+  <section class="faq-section" aria-label="Frequently asked questions">
+    <div class="wrap">
+      <div class="faq-label">FAQ</div>
+      <h2>Questions before you start?</h2>
+      <div class="faq-list">
+        <details><summary>Do I need to call first?</summary><p>No. You can start by sending a request online, and we can explain the next step in writing.</p></details>
+        <details><summary>Do I need to know the exact car?</summary><p>No. You can share the type of vehicle, budget, timing, and must-have features.</p></details>
+        <details><summary>Do you help with leasing and financing?</summary><p>Yes. DJIGIT US helps customers compare available lease and financing options.</p></details>
+        <details><summary>Is the application required right away?</summary><p>No. You can request a car first and start the application when you are ready.</p></details>
+        <details><summary>Where do you work?</summary><p>DJIGIT US serves customers in California, with appointment-based support in Los Angeles County.</p></details>
+      </div>
+    </div>
+  </section>
+
   <footer class="premium-footer">
     <div class="premium-footer-inner">
-      <div><img class="footer-logo" src="/img/DJIGIT_logo_round_final-removebg.png" alt="DJIGIT US" /><p class="footer-copy">DJIGIT US LLC is an independent auto broker and dealership based in Los Angeles County.</p></div>
-      <div><div class="footer-heading">Quick Links</div><div class="footer-links"><a href="/">Home</a><a href="#what-we-do">What We Do</a><a href="/application/">Credit Application</a><a href="#inventory">Inventory</a><a href="/contact/">Contact</a></div></div>
+      <div><img class="footer-logo" src="/img/DJIGIT_logo_round_final-removebg.png" alt="DJIGIT US" /><p class="footer-copy">DJIGIT US LLC is a licensed California auto broker and independent dealership helping customers find vehicles, compare lease or financing options, and complete paperwork with clear written communication.</p></div>
+      <div><div class="footer-heading">Quick Links</div><div class="footer-links"><a href="/">Home</a><a href="#what-we-do">What We Do</a><a href="/application/">Start Application</a><a href="#inventory">Inventory</a><a href="/contact/">Contact</a></div></div>
       <div><div class="footer-heading">Contact</div><div class="footer-contact"><span>Los Angeles County, California</span><a href="tel:+18185352313">(818) 535-2313</a><a href="mailto:djigitusllc@gmail.com">djigitusllc@gmail.com</a><a href="https://djigit.us">djigit.us</a><a href="https://www.instagram.com/djigit.us/" target="_blank" rel="noopener">@djigit.us</a></div></div>
     </div>
     <div class="copyright">© 2026 DJIGIT US LLC. All rights reserved.</div>
