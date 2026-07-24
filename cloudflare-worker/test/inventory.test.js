@@ -27,8 +27,17 @@ describe("Worker inventory", () => {
     })}</script>`;
     expect(extractVehicles(html, dealer)[0]).toMatchObject({
       name:"New 2026 Kia Sportage LX FWD Automatic",
-      trim:"LX", powertrain:"Gasoline Fuel · Regular Unleaded I-4 2.5 L/152",
+      trim:"LX", powertrain:"Gasoline",
     });
+  });
+  it("normalizes detailed powertrain descriptions to short categories", () => {
+    const html = `<script type="application/ld+json">${JSON.stringify([
+      {"@type":"Vehicle",name:"RAV4 Plug-in Hybrid XSE",brand:"Toyota",model:"RAV4",fuelType:"Gas/Electric Hybrid"},
+      {"@type":"Vehicle",name:"Silverado",brand:"Chevrolet",model:"Silverado 1500",vehicleEngine:{name:"Turbo-Diesel 3.0L"}},
+      {"@type":"Vehicle",name:"IONIQ 5 EV",brand:"Hyundai",model:"IONIQ 5"},
+    ])}</script>`;
+    expect(extractVehicles(html, dealer).map((vehicle) => vehicle.powertrain))
+      .toEqual(["Plug-in Hybrid", "Diesel", "Electric"]);
   });
   it("keeps exact and close matches deterministic", () => {
     const [vehicle]=extractVehicles(fixture,dealer);

@@ -5,10 +5,20 @@ const price = (value) => {
 };
 const text = (value) => typeof value === "object" ? value?.name ?? null : value;
 const powertrainDescription = (vehicle) => {
-  const fuel = clean(vehicle.fuelType);
-  const engine = clean(text(vehicle.vehicleEngine));
-  if (fuel && engine && !fuel.toLowerCase().includes(engine.toLowerCase())) return `${fuel} · ${engine}`;
-  return fuel || engine || null;
+  const source = clean([
+    vehicle.fuelType,
+    text(vehicle.vehicleEngine),
+    vehicle.name,
+  ].filter(Boolean).join(" ")).toLowerCase();
+  if (!source) return null;
+  if (/\b(?:plug[- ]?in hybrid|phev)\b/.test(source)) return "Plug-in Hybrid";
+  if (/\b(?:hybrid|hev)\b/.test(source)) return "Hybrid";
+  if (/\b(?:hydrogen|fuel cell|fcev)\b/.test(source)) return "Hydrogen / Fuel Cell";
+  if (/\b(?:electric|battery electric|bev|ev)\b/.test(source)) return "Electric";
+  if (/\b(?:diesel|tdi)\b/.test(source)) return "Diesel";
+  if (/\b(?:flex fuel|e85)\b/.test(source)) return "Flex Fuel";
+  if (/\b(?:gasoline|gas|petrol|unleaded)\b/.test(source)) return "Gasoline";
+  return null;
 };
 const inferTrim = (vehicle) => {
   const explicit = clean(vehicle.vehicleConfiguration ?? vehicle.trim);
