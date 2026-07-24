@@ -40,6 +40,24 @@ export const curatedModels = {
   Volkswagen:["Atlas","Atlas Cross Sport","Golf GTI","Golf R","ID.4","ID. Buzz","Jetta","Taos","Tiguan"],
   Volvo:["EC40","EX30","EX40","EX90","S60","S90","V60","XC40","XC60","XC90"],
 };
+const excludedModels = {
+  Audi:["A4"],
+  Chevrolet:["Bolt EUV","Malibu"],
+  Chrysler:["300"],
+  Dodge:["Challenger"],
+  Ford:["Edge"],
+  Hyundai:["Venue"],
+  Jeep:["Renegade"],
+  Kia:["Forte","Miami","Stinger","Tekiar"],
+  Lexus:["RC"],
+  "Mercedes-Benz":["A-Class","EQA","Metris"],
+  Nissan:["Altima","GT-R","Titan","Versa"],
+  Ram:["1500 Classic","ProMaster City"],
+  Subaru:["Legacy"],
+  Toyota:["Venza"],
+  Volkswagen:["Arteon"],
+  Volvo:["C40 Recharge","V90"],
+};
 const withHeaders = (response) => {
   const result = new Response(response.body, response);
   Object.entries(securityHeaders).forEach(([name, value]) => result.headers.set(name, value));
@@ -76,11 +94,12 @@ export default {
         const make = url.searchParams.get("make")?.trim();
         if (!make || make.length > 60) return json({ error: "Укажите марку." }, 400);
         const currentYear = new Date().getUTCFullYear();
-        const modelYears = [currentYear - 1, currentYear, currentYear + 1];
+        const modelYears = [currentYear, currentYear + 1];
         const cacheKey = new Request(
-          `https://cache.internal/models-v3/${currentYear}/${encodeURIComponent(make.toLowerCase())}`,
+          `https://cache.internal/models-v4/${currentYear}/${encodeURIComponent(make.toLowerCase())}`,
         );
-        const cached = await caches.default.match(cacheKey);
+        const forceRefresh = url.searchParams.get("refresh") === "1";
+        const cached = forceRefresh ? null : await caches.default.match(cacheKey);
         if (cached) return withHeaders(cached);
         const responses = await Promise.all(modelYears.map(async (year) => {
           try {
@@ -92,9 +111,14 @@ export default {
           } catch { return null; }
         }));
         const official = responses.flatMap((data) => data?.Results ?? [])
-          .map((item) => String(item.Model_Name ?? "").trim()).filter(Boolean);
+          .map((item) => String(item.Model_Name ?? "").trim())
+          .filter((model) => model && model.length <= 60 && /^[A-Za-z0-9 .&+/-]+$/.test(model));
+        const excluded = new Set(
+          (excludedModels[make] ?? []).map((model) => model.toLowerCase()),
+        );
+        const current = official.filter((model) => !excluded.has(model.toLowerCase()));
         const curated = curatedModels[make] ?? [];
-        const models = [...new Set(curated.length ? curated : official)]
+        const models = [...new Set(current.length >= 3 ? current : curated)]
           .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
         if (!models.length) return json({ error: "Для этой марки модели не найдены." }, 404);
         const result = Response.json(

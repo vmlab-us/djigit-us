@@ -58,7 +58,7 @@ function populateMakes() {
   if (current) setSelectValue("make", current);
 }
 
-async function loadModels(make, selected = "") {
+async function loadModels(make, selected = "", force = false) {
   const requestId = ++modelRequestId;
   const model = $("model");
   const normalizedMake = String(make ?? "").trim();
@@ -66,7 +66,9 @@ async function loadModels(make, selected = "") {
   model.replaceChildren(new Option(normalizedMake ? "Загрузка моделей…" : "Сначала выберите марку", ""));
   if (!normalizedMake) return;
   try {
-    const data = await api(`/api/internal/models?make=${encodeURIComponent(normalizedMake)}`);
+    const data = await api(
+      `/api/internal/models?make=${encodeURIComponent(normalizedMake)}${force ? "&refresh=1" : ""}`,
+    );
     if (requestId !== modelRequestId) return;
     model.replaceChildren(new Option("Выберите модель", ""),
       ...data.models.map((name) => new Option(name, name)));
@@ -150,7 +152,21 @@ $("cancel").addEventListener("click", async () => {
   searchController?.abort(); activeSearch.status = "cancelled";
   finish(activeSearch);
 });
-$("refresh").addEventListener("click", () => loadDealers(true));
+$("refresh").addEventListener("click", async () => {
+  const make = $("make").value.trim();
+  const model = $("model").value.trim();
+  $("refresh").disabled = true;
+  $("directoryStatus").textContent = "Обновляем дилеров и актуальные модели…";
+  try {
+    await loadDealers(true);
+    if (make) {
+      setSelectValue("make", make);
+      await loadModels(make, model, true);
+    }
+  } finally {
+    $("refresh").disabled = false;
+  }
+});
 
 function finish(search) {
   $("cancel").hidden = true; $("progress").hidden = true; $("results").hidden = false;
