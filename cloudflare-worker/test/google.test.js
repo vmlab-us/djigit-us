@@ -42,3 +42,15 @@ it("uses audited final URL and excludes invalid links", () => {
   expect(result[0].website).toBe("https://www.dealer-one.test/new/");
   expect(result[0].auditResult).toBe("ГОТОВ");
 });
+
+it("keeps corporate records in the sheet but excludes sites without dealer inventory", () => {
+  const dealers=[
+    ["ID дилера","Бренд","Дилерский центр","Расстояние (мили)","Адрес / сведения из карточки","Телефон","Веб-сайт"],
+    ["d1","Porsche","Porsche Motorsport North America","23.6","LA","111","https://www.porsche.com/"],
+  ];
+  const audit=[
+    ["ID дилера","Конечный URL","Результат","Рекомендация"],
+    ["d1","https://www.porsche.com/","КОРПОРАТИВНЫЙ САЙТ / НЕТ ДИЛЕРСКОГО ИНВЕНТАРЯ","Не сканировать"],
+  ];
+  expect(linkDirectory(dealers,[],audit)).toEqual([]);
+});

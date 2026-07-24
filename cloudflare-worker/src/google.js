@@ -132,7 +132,10 @@ export function linkDirectory(dealerValues, fleetValues, auditValues = []) {
   const seen = new Set();
   return dealers.filter((dealer) => {
     if (!dealer.name || !dealer.brand || !dealer.website || nonSalesDepartment(dealer)) return false;
-    if (["НЕВЕРНАЯ ССЫЛКА", "ССЫЛКА ОТСУТСТВУЕТ"].includes(dealer.auditResult)) return false;
+    if (
+      ["НЕВЕРНАЯ ССЫЛКА", "ССЫЛКА ОТСУТСТВУЕТ"].includes(dealer.auditResult) ||
+      dealer.auditResult.includes("НЕТ ДИЛЕРСКОГО ИНВЕНТАРЯ")
+    ) return false;
     try {
       const parsed = new URL(dealer.website.replace(/^http:/i, "https:"));
       const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
