@@ -1,0 +1,27 @@
+{
+  "name": "@djigit/dealer-inventory",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "check": "node --check src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "express": "^5.1.0",
+    "googleapis": "^156.0.0",
+    "helmet": "^8.1.0",
+    "jose": "^6.1.0",
+    "p-limit": "^7.1.1",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
+  }
+}

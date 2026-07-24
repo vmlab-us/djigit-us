@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "djigit-dealer-inventory",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-23",
+  "workers_dev": true,
+  "vars": {
+    "GOOGLE_SHEETS_SPREADSHEET_ID": "1_xeOjMUJvoRxPRL1I579HYMSSMTTdwy3StzqpAzPOJc",
+    "DEALER_INVENTORY_ALLOWED_EMAIL": "djigitusllc@gmail.com",
+    "GOOGLE_OAUTH_CLIENT_ID": "904513539270-bnv4qstc10ul6nj5si5g77cqrf128p91.apps.googleusercontent.com"
+  },
+  "assets": {
+    "directory": "../internal-app/public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}
