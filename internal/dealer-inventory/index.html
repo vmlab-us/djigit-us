@@ -1,109 +1,55 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex, nofollow, noarchive" />
-    <title>Поиск у дилеров — DJIGIT US</title>
-    <link
-      rel="stylesheet"
-      href="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.css?v=20260723-11"
-    />
-  </head>
-  <body>
-    <main id="app">
-      <section id="login-view" class="login-shell">
-        <div class="login-card">
-          <div class="brand-mark">DJIGIT</div>
-          <h1>DJIGIT Internal</h1>
-          <p>Войдите разрешённым Google-аккаунтом.</p>
-          <div id="google-signin"></div>
-          <p id="login-error" class="error" hidden></p>
-        </div>
-      </section>
-
-      <section id="search-view" hidden>
-        <header class="site-header">
-          <div>
-            <span class="eyebrow">DJIGIT US · INTERNAL</span>
-            <h1>Поиск у дилеров</h1>
-          </div>
-          <button id="logout-button" class="button secondary">Выйти</button>
-        </header>
-
-        <div class="page-shell">
-          <form id="search-form" class="search-card">
-            <label class="wide-field">
-              <span>Запрос свободным текстом</span>
-              <textarea id="query" rows="2" placeholder="2026 Chevrolet Suburban diesel"></textarea>
-            </label>
-
-            <label>
-              <span>Марка</span>
-              <select id="make"><option value="">Любая</option></select>
-            </label>
-            <label>
-              <span>Модель</span>
-              <select id="model" disabled><option value="">Любая</option></select>
-            </label>
-            <label>
-              <span>Состояние</span>
-              <select id="condition">
-                <option value="">Любое</option>
-                <option value="new">New</option>
-                <option value="used">Used</option>
-                <option value="certified">Certified</option>
-              </select>
-            </label>
-            <label><span>Trim</span><input id="trim" /></label>
-            <label>
-              <span>Привод</span>
-              <select id="drivetrain">
-                <option value="">Любой</option>
-                <option value="AWD">AWD</option>
-                <option value="4WD">4WD</option>
-                <option value="FWD">FWD</option>
-                <option value="RWD">RWD</option>
-              </select>
-            </label>
-            <label>
-              <span>Двигатель</span>
-              <select id="engine">
-                <option value="">Любой</option>
-                <option value="gas">Gas</option>
-                <option value="diesel">Diesel</option>
-                <option value="hybrid">Hybrid</option>
-                <option value="electric">Electric</option>
-              </select>
-            </label>
-            <label><span>Год от</span><input id="yearMin" inputmode="numeric" /></label>
-            <label><span>Год до</span><input id="yearMax" inputmode="numeric" /></label>
-            <label><span>Цена до</span><input id="priceMax" inputmode="numeric" /></label>
-            <label><span>Пробег до</span><input id="mileageMax" inputmode="numeric" /></label>
-            <label><span>Цвет кузова</span><input id="exteriorColor" /></label>
-            <label><span>Расстояние до, миль</span><input id="distanceMiles" inputmode="numeric" /></label>
-
-            <details class="wide-field">
-              <summary>Как учитываются параметры</summary>
-              <p>Свободный текст распознаёт марку, модель, год, двигатель, цвет и цену. Заполненные поля имеют приоритет.</p>
-            </details>
-
-            <div class="actions wide-field">
-              <button class="button primary" type="submit">Найти у дилеров</button>
-              <button class="button secondary" id="refresh-dealers" type="button">Обновить справочник</button>
-            </div>
-            <p id="search-status" class="status wide-field"></p>
-          </form>
-
-          <section id="results" aria-live="polite"></section>
-        </div>
-      </section>
-    </main>
-
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script
-      src="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.js?v=20260723-11"
-      defer
-    ></script>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <title>Поиск автомобилей у дилеров · DJIGIT US</title>
+  <link rel="stylesheet" href="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.css?v=20260723-12">
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <section id="loginGate" class="login-gate">
+    <div class="login-card">
+      <img src="https://djigit.us/img/DJIGIT_logo_round_final-removebg.png" alt="">
+      <h1>DJIGIT Internal</h1>
+      <p>Войдите разрешённым Google-аккаунтом.</p>
+      <div id="googleSignIn"></div>
+      <p id="loginError" class="muted"></p>
+    </div>
+  </section>
+  <div id="appShell" hidden>
+  <header><img src="https://djigit.us/img/DJIGIT_logo_round_final-removebg.png" alt=""><div><small>DJIGIT US · INTERNAL</small><h1>Поиск у дилеров</h1></div></header>
+  <main>
+    <form id="searchForm" class="panel" autocomplete="off">
+      <label class="wide">Запрос свободным текстом
+        <textarea id="freeText" rows="2" placeholder="2025 Toyota RAV4 Hybrid XLE AWD, white exterior, до $40,000"></textarea>
+      </label>
+      <div class="grid">
+        <label>Марка <select id="make"><option value="">Выберите марку</option></select></label>
+        <label>Модель <select id="model" disabled><option value="">Сначала выберите марку</option></select></label>
+        <label>Состояние <select id="condition"><option value="">Любое</option><option>New</option><option>Used</option><option>CPO</option></select></label>
+        <label>Trim <input id="trim" placeholder="XLE"></label>
+        <label>Привод <select id="drivetrain"><option value="">Любой</option><option>FWD</option><option>RWD</option><option>AWD</option><option>4WD</option></select></label>
+        <label>Двигатель <select id="powertrain"><option value="">Любой</option><option>gasoline</option><option>hybrid</option><option>plug-in hybrid</option><option>electric</option><option>diesel</option></select></label>
+        <label>Год от <input id="yearMin" type="number" min="1980" max="2100"></label>
+        <label>Год до <input id="yearMax" type="number" min="1980" max="2100"></label>
+        <label>Цена до <input id="priceMax" type="number" min="0" step="500"></label>
+        <label>Пробег до <input id="mileageMax" type="number" min="0" step="1000"></label>
+        <label>Цвет кузова <input id="exteriorColor"></label>
+        <label>Расстояние до, миль <input id="distance" type="number" min="1"></label>
+      </div>
+      <details><summary>Как учитываются параметры</summary><p>Марка и модель обязательны. Указанное состояние также обязательно. Остальные параметры используются как желательные для ранжирования близких вариантов.</p></details>
+      <div class="actions"><button id="submit" type="submit">Найти у дилеров</button><button id="refresh" type="button" class="secondary">Обновить справочник</button><button id="cancel" type="button" class="danger" hidden>Отменить</button></div>
+      <p id="directoryStatus" class="muted">Загрузка справочника…</p>
+    </form>
+    <section id="progress" class="panel" hidden><h2>Проверяем сайты</h2><progress value="0" max="1"></progress><p id="progressText"></p><p class="muted">Обычно поиск занимает 1–2 минуты. Результаты появятся единым списком после завершения.</p></section>
+    <section id="message" class="notice" hidden></section>
+    <section id="results" hidden>
+      <div id="exact"></div><div id="close"></div><div id="failed"></div>
+    </section>
+  </main>
+  </div>
+  <script type="module" src="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.js?v=20260723-12"></script>
+</body>
 </html>
