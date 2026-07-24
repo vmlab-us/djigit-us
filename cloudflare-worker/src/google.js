@@ -1,3 +1,5 @@
+import { extractEmails, extractPhones, extractSmsPhone } from "./contacts.js";
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const base64url = (bytes) =>
@@ -44,7 +46,7 @@ async function accessToken(env) {
 
 export async function readDirectory(env, force = false) {
   const cache = caches.default;
-  const cacheKey = new Request(`https://cache.internal/dealers/${env.GOOGLE_SHEETS_SPREADSHEET_ID}`);
+  const cacheKey = new Request(`https://cache.internal/dealers/v2/${env.GOOGLE_SHEETS_SPREADSHEET_ID}`);
   if (!force) {
     const hit = await cache.match(cacheKey);
     if (hit) return hit.json();
@@ -95,10 +97,18 @@ export function linkDirectory(dealerValues, fleetValues, auditValues = []) {
   const fleet = new Map();
   for (const row of rows(fleetValues)) {
     const key = keyText(row["Дилерский центр"]);
+    const directPhonesRaw = clean(row["Прямые телефоны"]);
+    const officePhonesRaw = clean(row["Телефон отдела / основной"]);
+    const emails = extractEmails(row["Электронная почта"]);
+    const directPhones = extractPhones(directPhonesRaw);
+    const officePhones = extractPhones(officePhonesRaw);
     const item = {
       nameAndTitle: clean(row["Fleet-контакты и должности"]) || null,
-      phone: clean(row["Прямые телефоны"] || row["Телефон отдела / основной"]) || null,
-      email: clean(row["Электронная почта"]) || null,
+      phone: directPhones[0] ?? officePhones[0] ?? null,
+      smsPhone: extractSmsPhone(directPhonesRaw),
+      phones: directPhones,
+      email: emails[0] ?? null,
+      emails,
       status: clean(row["Статус контакта"]) || null,
     };
     fleet.set(key, [...(fleet.get(key) ?? []), item]);

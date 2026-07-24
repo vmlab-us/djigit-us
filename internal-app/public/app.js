@@ -255,15 +255,14 @@ function dealerContact(dealer) {
     name: fleet?.nameAndTitle || null,
     email: fleet?.email || null,
     fleetPhone: fleet?.phone || null,
+    smsPhone: fleet?.smsPhone || null,
     status: fleet?.status || null,
     officePhone: dealer.phone || null,
   };
 }
 function fleetMobilePhone(dealer) {
   const contact = dealerContact(dealer);
-  const evidence = `${contact.fleetPhone || ""} ${contact.status || ""} ${contact.name || ""}`;
-  return /\b(mobile|cell|sms|text)\b|мобил|сотов/i.test(evidence) ?
-    String(contact.fleetPhone || "").replace(/[^\d+]/g, "") : "";
+  return /^\+1\d{10}$/.test(contact.smsPhone || "") ? contact.smsPhone : "";
 }
 function fleetPriority(dealer) {
   const contact = dealerContact(dealer);
@@ -301,7 +300,9 @@ function contactActions(vehicle) {
   const recipient = dealerContact(vehicle.dealer);
   const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email || "") ? recipient.email : "";
   const phone = fleetMobilePhone(vehicle.dealer);
-  const officePhone = String(recipient.officePhone || "").replace(/[^\d+]/g, "");
+  const officeDigits = String(recipient.officePhone || "").replace(/\D/g, "");
+  const officePhone = officeDigits.length === 10 ? `+1${officeDigits}` :
+    officeDigits.length === 11 && officeDigits.startsWith("1") ? `+${officeDigits}` : "";
   const subject = `Availability request — ${[vehicle.year, vehicle.make, vehicle.model, vehicle.stockNumber && `Stock ${vehicle.stockNumber}`].filter(Boolean).join(" ")}`;
   const emailHref = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(inquiryMessage(vehicle))}`;
   const smsSeparator = /iPad|iPhone|iPod/.test(navigator.userAgent) ? "&" : "?";
