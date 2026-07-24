@@ -6,6 +6,8 @@ const concurrency = Math.max(1, Math.min(20, Number(process.env.AUDIT_CONCURRENC
 const timeoutMs = Math.max(2_000, Math.min(30_000, Number(process.env.AUDIT_TIMEOUT_MS) || 12_000));
 
 const blockedPattern = /access denied|captcha|verify you are human|cf-chl-|akamai/i;
+const vehicleLinkPattern =
+  /(?:href\s*=\s*["'][^"'#]*(?:viewdetails|vehicle-details|\/vehicle\/|\/inventory\/|\/new-|\/used-|[A-HJ-NPR-Z0-9]{17})[^"'#]*["']|<loc>\s*[^<]*(?:viewdetails|vehicle-details|\/vehicle\/|\/inventory\/|\/new-|\/used-|[A-HJ-NPR-Z0-9]{17})[^<]*<\/loc>)/i;
 const publicUrl = (value) => {
   try {
     const url = new URL(value);
@@ -42,12 +44,51 @@ async function probe(input) {
       // text as an actual block page when the response body is small.
       const blocked = [401, 403, 429].includes(response.status)
         || (body.length < 100_000 && blockedPattern.test(body.slice(0, 20_000)));
+      let hasVehicleLinks = vehicleLinkPattern.test(body);
+      let fallbackUrl = null;
+      if (response.ok && !hasVehicleLinks) {
+        const origin = new URL(response.url).origin;
+        const fallbackCandidates = [
+          new URL("/new-inventory/index.htm", origin),
+          new URL("/search/new/", origin),
+          new URL("/sitemap.xml", origin),
+          new URL("/sitemap_index.xml", origin),
+        ];
+        for (const fallback of fallbackCandidates) {
+          const fallbackController = new AbortController();
+          const fallbackTimer = setTimeout(() => fallbackController.abort(), timeoutMs);
+          try {
+            const fallbackResponse = await fetch(fallback, {
+              redirect: "follow",
+              signal: fallbackController.signal,
+              headers: {
+                accept: "text/html,application/xhtml+xml,application/xml",
+                "accept-language": "en-US,en;q=0.8",
+                "user-agent": "Mozilla/5.0 (compatible; DJIGITInventoryAudit/1.0; +https://djigit.us)",
+              },
+            });
+            if (!fallbackResponse.ok) continue;
+            const fallbackBody = await fallbackResponse.text();
+            if (vehicleLinkPattern.test(fallbackBody)) {
+              hasVehicleLinks = true;
+              fallbackUrl = fallbackResponse.url;
+              break;
+            }
+          } catch {
+            // Continue with the next conventional inventory endpoint.
+          } finally {
+            clearTimeout(fallbackTimer);
+          }
+        }
+      }
       return {
         status: response.status,
         final: response.url,
         blocked,
         httpsUpgrade: parsed.protocol === "http:" && candidate.protocol === "https:" && response.ok,
         hasJsonLd: /application\/ld\+json/i.test(body),
+        hasVehicleLinks,
+        fallbackUrl,
         bytes: body.length,
       };
     } catch (error) {
