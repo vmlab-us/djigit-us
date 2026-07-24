@@ -170,11 +170,58 @@ $("refresh").addEventListener("click", async () => {
 
 function finish(search) {
   $("cancel").hidden = true; $("progress").hidden = true; $("results").hidden = false;
+  sortResults(search);
+  $("resultCount").textContent = `Найдено: ${search.exact.length + search.close.length}`;
   renderGroup("exact", "Точные совпадения", search.exact);
   renderGroup("close", "Близкие варианты", search.close);
   $("failed").innerHTML = search.failed.length ? `<details class="panel"><summary>Не удалось проверить (${search.failed.length})</summary><ul>${search.failed.map((x) => `<li>${escapeHtml(x.dealerName)} — ${escapeHtml(x.reason)}</li>`).join("")}</ul></details>` : "";
   if (!search.exact.length && !search.close.length) showMessage(search.selected ? "Совпадений не найдено." : "Для этой марки нет дилеров с корректным HTTPS-сайтом в справочнике.");
 }
+
+const vehiclePrice = (item) => item.vehicle.price ?? item.vehicle.msrp;
+const numberOrInfinity = (value) => Number.isFinite(Number(value)) ? Number(value) : Infinity;
+const numberOrNegativeInfinity = (value) => Number.isFinite(Number(value)) ? Number(value) : -Infinity;
+function resultComparator(a, b) {
+  const mode = $("sortOrder").value;
+  const fleetTie = fleetPriority(b.vehicle.dealer) - fleetPriority(a.vehicle.dealer);
+  const scoreTie = b.score - a.score;
+  if (mode === "priceAsc") {
+    return numberOrInfinity(vehiclePrice(a)) - numberOrInfinity(vehiclePrice(b)) || fleetTie || scoreTie;
+  }
+  if (mode === "priceDesc") {
+    return numberOrNegativeInfinity(vehiclePrice(b)) - numberOrNegativeInfinity(vehiclePrice(a)) ||
+      fleetTie || scoreTie;
+  }
+  if (mode === "distanceAsc") {
+    return numberOrInfinity(a.vehicle.dealer.distanceMiles) - numberOrInfinity(b.vehicle.dealer.distanceMiles) ||
+      fleetTie || scoreTie;
+  }
+  if (mode === "yearDesc") {
+    return numberOrNegativeInfinity(b.vehicle.year) - numberOrNegativeInfinity(a.vehicle.year) ||
+      fleetTie || scoreTie;
+  }
+  if (mode === "inStock") {
+    return Number(/in stock/i.test(b.vehicle.status || "")) - Number(/in stock/i.test(a.vehicle.status || "")) ||
+      fleetTie || scoreTie;
+  }
+  if (mode === "dealerName") {
+    return String(a.vehicle.dealer.name || "").localeCompare(String(b.vehicle.dealer.name || ""), "en",
+      { sensitivity:"base" }) || scoreTie;
+  }
+  return fleetTie || scoreTie ||
+    numberOrInfinity(a.vehicle.dealer.distanceMiles) - numberOrInfinity(b.vehicle.dealer.distanceMiles) ||
+    numberOrInfinity(vehiclePrice(a)) - numberOrInfinity(vehiclePrice(b));
+}
+function sortResults(search) {
+  search.exact.sort(resultComparator);
+  search.close.sort(resultComparator);
+}
+$("sortOrder").addEventListener("change", () => {
+  if (!activeSearch || $("results").hidden) return;
+  sortResults(activeSearch);
+  renderGroup("exact", "Точные совпадения", activeSearch.exact);
+  renderGroup("close", "Близкие варианты", activeSearch.close);
+});
 
 function renderGroup(id, title, items) {
   $(id).innerHTML = items.length ? `<section class="group"><h2>${title} (${items.length})</h2><div class="cards">${items.map(card).join("")}</div></section>` : "";
@@ -325,9 +372,8 @@ function applyFreeText() {
 function dedupeAndSort(search) {
   const seen=new Set();
   const unique=(items)=>items.filter(({vehicle})=>{const key=vehicle.vin?`vin:${vehicle.vin}`:`${vehicle.dealer.id}:${vehicle.stockNumber||""}:${vehicle.url||""}`;if(seen.has(key))return false;seen.add(key);return true;});
-  const byFleetThenScore=(a,b)=>fleetPriority(b.vehicle.dealer)-fleetPriority(a.vehicle.dealer)||b.score-a.score;
-  search.exact=unique(search.exact).sort(byFleetThenScore);
-  search.close=unique(search.close).sort(byFleetThenScore);
+  search.exact=unique(search.exact).sort(resultComparator);
+  search.close=unique(search.close).sort(resultComparator);
 }
 async function initializeLogin() {
   const config=await fetch(`${API_ORIGIN}/api/auth/config`).then((response)=>response.json());

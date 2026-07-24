@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
   <title>Поиск автомобилей у дилеров · DJIGIT US</title>
-  <link rel="stylesheet" href="/internal/dealer-inventory/assets/app.css?v=20260724-14">
+  <link rel="stylesheet" href="/internal/dealer-inventory/assets/app.css?v=20260724-16">
   <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
@@ -46,10 +46,24 @@
     <section id="progress" class="panel" hidden><h2>Проверяем сайты</h2><progress value="0" max="1"></progress><p id="progressText"></p><p class="muted">Обычно поиск занимает 1–2 минуты. Результаты появятся единым списком после завершения.</p></section>
     <section id="message" class="notice" hidden></section>
     <section id="results" hidden>
+      <div id="resultsToolbar" class="results-toolbar">
+        <label>Сортировка
+          <select id="sortOrder">
+            <option value="recommended">Рекомендуемая: fleet-контакты выше</option>
+            <option value="priceAsc">Цена: сначала дешевле</option>
+            <option value="priceDesc">Цена: сначала дороже</option>
+            <option value="distanceAsc">Расстояние: сначала ближе</option>
+            <option value="yearDesc">Год: сначала новее</option>
+            <option value="inStock">Наличие: In Stock выше</option>
+            <option value="dealerName">Дилер: по алфавиту</option>
+          </select>
+        </label>
+        <strong id="resultCount"></strong>
+      </div>
       <div id="exact"></div><div id="close"></div><div id="failed"></div>
     </section>
   </main>
   </div>
-  <script type="module" src="/internal/dealer-inventory/assets/app.js?v=20260724-15"></script>
+  <script type="module" src="/internal/dealer-inventory/assets/app.js?v=20260724-16"></script>
 </body>
 </html>
