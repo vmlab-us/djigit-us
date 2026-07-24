@@ -22,11 +22,12 @@ describe("Worker inventory", () => {
       "@type":"Vehicle", name:"New 2026 Kia Sportage LX FWD Automatic",
       vehicleModelDate:"2026", brand:{name:"Kia"}, model:"Sportage",
       vehicleIdentificationNumber:"5XYK23DF0TG439927",
-      fuelType:"Gasoline Fuel", offers:{price:"30485",availability:"InStock"},
+      fuelType:"Gasoline Fuel", vehicleEngine:{name:"Regular Unleaded I-4 2.5 L/152"},
+      offers:{price:"30485",availability:"InStock"},
     })}</script>`;
     expect(extractVehicles(html, dealer)[0]).toMatchObject({
       name:"New 2026 Kia Sportage LX FWD Automatic",
-      trim:"LX", powertrain:"Gasoline Fuel",
+      trim:"LX", powertrain:"Gasoline Fuel · Regular Unleaded I-4 2.5 L/152",
     });
   });
   it("keeps exact and close matches deterministic", () => {

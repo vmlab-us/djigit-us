@@ -4,6 +4,12 @@ const price = (value) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 };
 const text = (value) => typeof value === "object" ? value?.name ?? null : value;
+const powertrainDescription = (vehicle) => {
+  const fuel = clean(vehicle.fuelType);
+  const engine = clean(text(vehicle.vehicleEngine));
+  if (fuel && engine && !fuel.toLowerCase().includes(engine.toLowerCase())) return `${fuel} · ${engine}`;
+  return fuel || engine || null;
+};
 const inferTrim = (vehicle) => {
   const explicit = clean(vehicle.vehicleConfiguration ?? vehicle.trim);
   if (explicit) return explicit;
@@ -92,7 +98,7 @@ export function extractVehicles(html, dealer, checkedAt = new Date().toISOString
       condition: /used|pre-owned/i.test(clean(offer.itemCondition ?? vehicle.itemCondition)) ? "Used" :
         /certified|cpo/i.test(clean(offer.itemCondition ?? vehicle.itemCondition)) ? "CPO" : "New",
       bodyStyle: clean(vehicle.bodyType) || null,
-      powertrain: clean(vehicle.fuelType ?? text(vehicle.vehicleEngine)) || null,
+      powertrain: powertrainDescription(vehicle),
       transmission: clean(vehicle.vehicleTransmission) || null,
       drivetrain: clean(vehicle.driveWheelConfiguration) || null,
       exteriorColor: clean(vehicle.color) || null,
@@ -175,6 +181,41 @@ export async function searchDealer(dealer, query) {
         if (contentLength > 2_000_000) throw new Error("DEALER_RESPONSE_TOO_LARGE");
         const vehicles = extractVehicles(await response.text(), dealer);
         if (!vehicles.length) continue;
+        const incomplete = vehicles
+          .filter((vehicle) => vehicle.url && (!vehicle.powertrain || !vehicle.trim))
+          .slice(0, 6);
+        await Promise.all(incomplete.map(async (vehicle) => {
+          try {
+            const detailUrl = validateDealerUrl(vehicle.url);
+            if (comparableHostname(detailUrl.hostname) !== comparableHostname(dealerUrl.hostname)) return;
+            const detailResponse = await fetch(detailUrl, {
+              signal: controller.signal,
+              redirect: "follow",
+              headers: {
+                accept: "text/html,application/xhtml+xml",
+                "accept-language": "en-US,en;q=0.8",
+                "user-agent": "Mozilla/5.0 (compatible; DJIGITInventory/1.0; +https://djigit.us)",
+              },
+              cf: { cacheTtl: 300, cacheEverything: true },
+            });
+            const finalDetailUrl = validateDealerUrl(detailResponse.url || detailUrl.href);
+            if (!detailResponse.ok ||
+                comparableHostname(finalDetailUrl.hostname) !== comparableHostname(dealerUrl.hostname)) return;
+            const contentLength = Number(detailResponse.headers.get("content-length") ?? 0);
+            if (contentLength > 2_000_000) return;
+            const detailed = extractVehicles(await detailResponse.text(), dealer)
+              .find((candidate) =>
+                (vehicle.vin && candidate.vin === vehicle.vin) ||
+                (vehicle.stockNumber && candidate.stockNumber === vehicle.stockNumber));
+            if (!detailed) return;
+            for (const field of ["trim", "powertrain", "drivetrain", "exteriorColor", "status"]) {
+              if (!vehicle[field] && detailed[field]) vehicle[field] = detailed[field];
+            }
+            if (detailed.name && (!vehicle.name || detailed.name.length > vehicle.name.length)) {
+              vehicle.name = detailed.name;
+            }
+          } catch { /* keep the inventory-page data when a detail page is unavailable */ }
+        }));
         const ranked = rank(vehicles, query.filters, query.allowRequiredViolations);
         return { exact: ranked.filter((item) => item.exact), close: ranked.filter((item) => !item.exact) };
       } catch (error) {
