@@ -205,6 +205,22 @@ export async function searchDealer(dealer, query) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
+    if (key(dealer.brand) === "audi") {
+      try {
+        const audiVehicles = await fetchAudiVehicles(
+          dealer,
+          { model: query?.filters?.model?.value },
+          controller.signal,
+        );
+        if (audiVehicles) {
+          const ranked = rank(audiVehicles, query.filters, query.allowRequiredViolations);
+          return { exact: ranked.filter((item) => item.exact), close: ranked.filter((item) => !item.exact) };
+        }
+      } catch (error) {
+        if (error?.name === "AbortError") throw error;
+        // Fall through to the dealer's own site when Audi's central API is unavailable.
+      }
+    }
     let lastError = null;
     let reachedDealer = false;
     for (const candidate of inventoryCandidates(dealerUrl, query)) {
@@ -318,3 +334,4 @@ export async function searchDealer(dealer, query) {
     clearTimeout(timer);
   }
 }
+import { fetchAudiVehicles } from "./audi.js";
