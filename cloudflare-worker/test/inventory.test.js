@@ -4,7 +4,7 @@ import { extractVehicles, rank, validateDealerUrl } from "../src/inventory.js";
 const dealer = { id:"d1", name:"Dealer", website:"https://dealer.example", fleet:null };
 const fixture = `<script type="application/ld+json">{
   "@context":"https://schema.org","@type":"Vehicle","vehicleModelDate":"2025",
-  "brand":{"name":"Toyota"},"model":"RAV4","vehicleConfiguration":"XLE",
+  "brand":{"name":"Toyota"},"model":"RAV4","vehicleConfiguration":"XLE","fuelType":"Hybrid",
   "vehicleIdentificationNumber":"JT123","sku":"STK-9","color":"White",
   "offers":{"price":"39995","availability":"https://schema.org/InStock","url":"/vehicle/JT123"}
 }</script>`;
@@ -12,7 +12,8 @@ const fixture = `<script type="application/ld+json">{
 describe("Worker inventory", () => {
   it("extracts normalized JSON-LD vehicles", () => {
     expect(extractVehicles(fixture,dealer)[0]).toMatchObject({
-      year:2025,make:"Toyota",model:"RAV4",vin:"JT123",stockNumber:"STK-9",price:39995,status:"In Stock",
+      year:2025,make:"Toyota",model:"RAV4",trim:"XLE",powertrain:"Hybrid",
+      vin:"JT123",stockNumber:"STK-9",price:39995,status:"In Stock",
       url:"https://dealer.example/vehicle/JT123",
     });
   });

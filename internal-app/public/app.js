@@ -170,9 +170,16 @@ function card(item) {
     ${fleetMobilePhone(d) ? `<span class="badge fleet-badge">Fleet mobile</span>` : ""}
     <h3>${escapeHtml([v.year,v.make,v.model,v.trim].filter(Boolean).join(" "))}</h3>
     ${item.explanations.length ? `<ul class="diff">${item.explanations.map((x)=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>` : ""}
-    <div class="meta"><span>Цена: ${price == null ? "Не указано" : `$${price.toLocaleString()}`}</span><span>${escapeHtml(v.status || "Статус не указан")}</span>
-    <span>VIN: ${escapeHtml(v.vin || "Не указан")}</span><span>Stock: ${escapeHtml(v.stockNumber || "Не указан")}</span>
-    <span>Цвет: ${escapeHtml(v.exteriorColor || "Не указан")}</span><span>Привод: ${escapeHtml(v.drivetrain || "Не указан")}</span></div>
+    <div class="meta">
+      <span>Цена: ${price == null ? "Не указана" : `$${price.toLocaleString()}`}</span>
+      <span>VIN: ${escapeHtml(v.vin || "Не указан")}</span>
+      <span>Цвет: ${escapeHtml(v.exteriorColor || "Не указан")}</span>
+      <span>Наличие: ${escapeHtml(v.status || "Не указано")}</span>
+      <span>Stock #: ${escapeHtml(v.stockNumber || "Не указан")}</span>
+      <span>Привод: ${escapeHtml(v.drivetrain || "Не указан")}</span>
+      <span>Двигатель: ${escapeHtml(v.powertrain || "Не указан")}</span>
+      <span>Trim: ${escapeHtml(v.trim || "Не указан")}</span>
+    </div>
     <p><strong>${escapeHtml(d.name)}</strong>${d.distanceMiles == null ? "" : ` · ${d.distanceMiles} mi`}<br>${contact(d)}</p>
     ${v.url ? `<a href="${safeUrl(v.url)}" target="_blank" rel="noopener noreferrer">Открыть автомобиль у дилера</a>` : ""}
     ${contactActions(v)}
@@ -216,6 +223,8 @@ function vehicleSummary(vehicle) {
     amount != null ? `Advertised price: $${Number(amount).toLocaleString("en-US")}` : null,
     vehicle.exteriorColor ? `Exterior color: ${vehicle.exteriorColor}` : null,
     vehicle.drivetrain ? `Drivetrain: ${vehicle.drivetrain}` : null,
+    vehicle.powertrain ? `Engine / powertrain: ${vehicle.powertrain}` : null,
+    vehicle.trim ? `Trim: ${vehicle.trim}` : null,
     vehicle.status ? `Status shown online: ${vehicle.status}` : null,
     vehicle.url ? `Vehicle link: ${vehicle.url}` : null,
   ].filter(Boolean);
