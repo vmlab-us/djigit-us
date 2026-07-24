@@ -50,6 +50,18 @@ describe("Worker inventory", () => {
     expect(result.exact).toBe(false);
     expect(result.explanations[0]).toContain("White вместо Black");
   });
+  it("rejects a conflicting vehicle title even when a bad model field says GLB", () => {
+    const base = {
+      make:"Mercedes-Benz", model:"GLB-Class", year:2027, price:52655,
+      condition:"New", dealer,
+    };
+    const filters = {
+      make:{value:"Mercedes-Benz",required:true},
+      model:{value:"GLB-Class",required:true},
+    };
+    expect(rank([{...base,name:"2027 Mercedes-Benz CLA 350"}],filters)).toEqual([]);
+    expect(rank([{...base,name:"2026 Mercedes-Benz GLB 250 SUV"}],filters)).toHaveLength(1);
+  });
   it("rejects internal dealer URLs", () => {
     expect(()=>validateDealerUrl("http://dealer.example")).toThrow();
     expect(()=>validateDealerUrl("https://127.0.0.1/cars")).toThrow();

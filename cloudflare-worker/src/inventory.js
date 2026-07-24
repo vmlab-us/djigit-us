@@ -173,11 +173,27 @@ const actual = (vehicle, field) => {
   if (field === "mileageMax") return vehicle.mileage;
   return vehicle[field];
 };
+const modelTokens = (value) => key(value)
+  .replace(/\b(?:mercedes[- ]benz|class)\b/g, " ")
+  .replace(/[^a-z0-9]+/g, " ")
+  .trim()
+  .split(/\s+/)
+  .filter(Boolean);
 const matches = (field, value, expected) => {
   if (field === "yearMin") return value >= expected;
   if (field === "yearMax" || field === "priceMax" || field === "mileageMax") return value <= expected;
-  if (field === "model") return key(value).includes(key(expected)) || key(expected).includes(key(value));
+  if (field === "model") {
+    const actualModel = modelTokens(value)[0];
+    const expectedModel = modelTokens(expected)[0];
+    return Boolean(actualModel && expectedModel && actualModel === expectedModel);
+  }
   return key(value).includes(key(expected));
+};
+
+const modelMatchesVehicleName = (vehicle, expected) => {
+  const expectedToken = modelTokens(expected)[0];
+  const nameTokens = new Set(modelTokens(vehicle.name));
+  return !expectedToken || !vehicle.name || nameTokens.has(expectedToken);
 };
 
 export function rank(vehicles, filters, allowRequiredViolations = false) {
@@ -189,7 +205,10 @@ export function rank(vehicles, filters, allowRequiredViolations = false) {
       if (value === null || value === undefined || value === "") {
         exact = false; explanations.push(`${field}: не удалось проверить`);
         if (preference.required && !allowRequiredViolations) return null;
-      } else if (matches(field, value, preference.value)) score += preference.required ? 100 : 20;
+      } else if (matches(field, value, preference.value) &&
+          (field !== "model" || modelMatchesVehicleName(vehicle, preference.value))) {
+        score += preference.required ? 100 : 20;
+      }
       else {
         exact = false; explanations.push(`${field}: ${value} вместо ${preference.value}`);
         if (preference.required && !allowRequiredViolations) return null;
@@ -219,6 +238,22 @@ export async function searchDealer(dealer, query) {
       } catch (error) {
         if (error?.name === "AbortError") throw error;
         // Fall through to the dealer's own site when Audi's central API is unavailable.
+      }
+    }
+    if (key(dealer.brand).includes("mercedes")) {
+      try {
+        const mercedesVehicles = await fetchMercedesVehicles(
+          dealer,
+          { model: query?.filters?.model?.value },
+          controller.signal,
+        );
+        if (mercedesVehicles) {
+          const ranked = rank(mercedesVehicles, query.filters, query.allowRequiredViolations);
+          return { exact: ranked.filter((item) => item.exact), close: ranked.filter((item) => !item.exact) };
+        }
+      } catch (error) {
+        if (error?.name === "AbortError") throw error;
+        // Fall through to the dealer's own site if the official Mercedes inventory is unavailable.
       }
     }
     let lastError = null;
@@ -335,3 +370,4 @@ export async function searchDealer(dealer, query) {
   }
 }
 import { fetchAudiVehicles } from "./audi.js";
+import { fetchMercedesVehicles } from "./mercedes.js";
