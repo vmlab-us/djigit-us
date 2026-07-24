@@ -62,11 +62,13 @@ it("publishes only one valid email and the explicitly labeled mobile number", ()
   ];
   const fleet=[
     ["Дилерский центр","Бренд(ы)","Fleet-контакты и должности","Прямые телефоны","Электронная почта","Телефон отдела / основной"],
-    ["Audi Downtown LA","Audi","Fleet team","213-493-0258 | 213-204-7917 direct, 323-251-6880 cell","cyi@dtlamotors.com | nchoi@dtlamotors.com","213-493-0258"],
+    ["Audi Downtown LA","Audi","Fleet team","1–5. 213-493-0258 | 6. 213-204-7917 direct, 323-251-6880 cell","3. cyi@dtlamotors.com | 5. nchoi@dtlamotors.com | 6. sarvatz@dtlamotors.com","213-493-0258"],
   ];
   const [dealer]=linkDirectory(dealers,fleet);
   expect(dealer.fleet.phone).toBe("+12134930258");
   expect(dealer.fleet.smsPhone).toBe("+13232516880");
-  expect(dealer.fleet.email).toBe("cyi@dtlamotors.com");
-  expect(dealer.fleet.emails).toEqual(["cyi@dtlamotors.com","nchoi@dtlamotors.com"]);
+  expect(dealer.fleet.email).toBe("sarvatz@dtlamotors.com");
+  expect(dealer.fleet.emails).toEqual([
+    "cyi@dtlamotors.com","nchoi@dtlamotors.com","sarvatz@dtlamotors.com",
+  ]);
 });

@@ -33,3 +33,24 @@ export function extractSmsPhone(value) {
   if (matches.length === 1 && MOBILE_LABEL.test(text)) return normalizeUsPhone(matches[0][0]);
   return null;
 }
+
+export function extractSmsContactIndex(value) {
+  const text = String(value ?? "");
+  const smsPhone = extractSmsPhone(text);
+  if (!smsPhone) return null;
+  const match = [...text.matchAll(PHONE_PATTERN)]
+    .find((item) => normalizeUsPhone(item[0]) === smsPhone);
+  if (!match) return null;
+  const entry = text.slice(Math.max(text.lastIndexOf("|", match.index) + 1, 0), match.index);
+  const indexes = [...entry.matchAll(/(?:^|\s)(\d+)\.\s/g)];
+  return indexes.length ? Number(indexes[indexes.length - 1][1]) : null;
+}
+
+export function selectEmail(value, preferredIndex = null) {
+  const text = String(value ?? "");
+  if (preferredIndex !== null) {
+    const indexed = new RegExp(`(?:^|\\|)\\s*${preferredIndex}\\.\\s*(${EMAIL_PATTERN.source})`, "i").exec(text);
+    if (indexed) return indexed[1].toLowerCase();
+  }
+  return extractEmails(text)[0] ?? null;
+}

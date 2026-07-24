@@ -1,4 +1,6 @@
-import { extractEmails, extractPhones, extractSmsPhone } from "./contacts.js";
+import {
+  extractEmails, extractPhones, extractSmsContactIndex, extractSmsPhone, selectEmail,
+} from "./contacts.js";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -102,12 +104,14 @@ export function linkDirectory(dealerValues, fleetValues, auditValues = []) {
     const emails = extractEmails(row["Электронная почта"]);
     const directPhones = extractPhones(directPhonesRaw);
     const officePhones = extractPhones(officePhonesRaw);
+    const smsPhone = extractSmsPhone(directPhonesRaw);
+    const smsContactIndex = extractSmsContactIndex(directPhonesRaw);
     const item = {
       nameAndTitle: clean(row["Fleet-контакты и должности"]) || null,
       phone: directPhones[0] ?? officePhones[0] ?? null,
-      smsPhone: extractSmsPhone(directPhonesRaw),
+      smsPhone,
       phones: directPhones,
-      email: emails[0] ?? null,
+      email: selectEmail(row["Электронная почта"], smsContactIndex),
       emails,
       status: clean(row["Статус контакта"]) || null,
     };
