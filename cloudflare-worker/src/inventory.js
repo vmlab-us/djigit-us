@@ -68,7 +68,7 @@ export function validateDealerUrl(value) {
 }
 
 const modelSlug = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const inventoryCandidates = (dealerUrl, query) => {
+export const inventoryCandidates = (dealerUrl, query) => {
   const make = clean(query?.filters?.make?.value);
   const model = clean(query?.filters?.model?.value);
   const slug = modelSlug(model);
@@ -77,10 +77,48 @@ const inventoryCandidates = (dealerUrl, query) => {
     slug && new URL(`/new-${modelSlug(make)}/${slug}.htm`, origin),
     model && new URL(`/new-inventory/index.htm?search=${encodeURIComponent(model)}`, origin),
     model && new URL(`/new-vehicles/?model=${encodeURIComponent(model)}`, origin),
+    model && new URL(
+      `/search/new-${modelSlug(make)}-${slug}/?s:pr=0&tp=new&md=${encodeURIComponent(model)}`,
+      origin,
+    ),
+    new URL("/new-inventory/index.htm", origin),
+    new URL("/search/new/", origin),
+    new URL("/sitemap.xml", origin),
+    new URL("/sitemap_index.xml", origin),
     dealerUrl,
-  ].filter(Boolean);
+  ].filter(Boolean).filter((candidate, index, candidates) =>
+    candidates.findIndex((item) => item.href === candidate.href) === index);
 };
 const comparableHostname = (value) => value.toLowerCase().replace(/^www\./, "");
+
+export function extractVehicleLinks(html, baseUrl, model = "", limit = 8) {
+  const base = validateDealerUrl(baseUrl);
+  const modelNeedle = modelSlug(model);
+  const links = [];
+  const candidates = html.matchAll(
+    /(?:href\s*=\s*["']([^"'#]+)["']|<loc>\s*([^<\s]+)\s*<\/loc>)/gi,
+  );
+  for (const match of candidates) {
+    const value = match[1] ?? match[2];
+    const resolved = safeUrl(value?.replaceAll("&amp;", "&"), base.href);
+    if (!resolved) continue;
+    let url;
+    try {
+      url = validateDealerUrl(resolved);
+    } catch {
+      continue;
+    }
+    if (comparableHostname(url.hostname) !== comparableHostname(base.hostname)) continue;
+    const normalized = modelSlug(url.pathname);
+    const looksLikeVehicle = /[A-HJ-NPR-Z0-9]{17}/i.test(url.href) ||
+      /(?:viewdetails|vehicle-details|vehicle\/|inventory\/.*(?:new|used)|\/(?:new|used)-)/i.test(url.pathname);
+    if (!looksLikeVehicle || (modelNeedle && !normalized.includes(modelNeedle) &&
+        !/[A-HJ-NPR-Z0-9]{17}/i.test(url.href))) continue;
+    if (!links.includes(url.href)) links.push(url.href);
+    if (links.length >= limit) break;
+  }
+  return links;
+}
 
 export function extractVehicles(html, dealer, checkedAt = new Date().toISOString()) {
   if (html.length < 100_000 &&
@@ -185,11 +223,52 @@ export async function searchDealer(dealer, query) {
         if (comparableHostname(finalUrl.hostname) !== comparableHostname(dealerUrl.hostname)) {
           throw new Error("UNSAFE_REDIRECT");
         }
+        if (response.status === 401 || response.status === 403 || response.status === 429) {
+          throw new Error("BLOCKED_OR_CAPTCHA");
+        }
         if (!response.ok) throw new Error(`HTTP_${response.status}`);
         reachedDealer = true;
         const contentLength = Number(response.headers.get("content-length") ?? 0);
         if (contentLength > 2_000_000) throw new Error("DEALER_RESPONSE_TOO_LARGE");
-        const vehicles = extractVehicles(await response.text(), dealer);
+        const html = await response.text();
+        let vehicles = extractVehicles(html, dealer);
+        if (!vehicles.length) {
+          const detailLinks = extractVehicleLinks(
+            html,
+            finalUrl.href,
+            query?.filters?.model?.value,
+            8,
+          );
+          const discovered = await Promise.all(detailLinks.map(async (href) => {
+            try {
+              const detailResponse = await fetch(href, {
+                signal: controller.signal,
+                redirect: "follow",
+                headers: {
+                  accept: "text/html,application/xhtml+xml",
+                  "accept-language": "en-US,en;q=0.8",
+                  "user-agent": "Mozilla/5.0 (compatible; DJIGITInventory/1.0; +https://djigit.us)",
+                },
+                cf: { cacheTtl: 300, cacheEverything: true },
+              });
+              const detailUrl = validateDealerUrl(detailResponse.url || href);
+              if (!detailResponse.ok ||
+                  comparableHostname(detailUrl.hostname) !== comparableHostname(dealerUrl.hostname)) return [];
+              const detailLength = Number(detailResponse.headers.get("content-length") ?? 0);
+              if (detailLength > 2_000_000) return [];
+              return extractVehicles(await detailResponse.text(), dealer);
+            } catch {
+              return [];
+            }
+          }));
+          const seenVehicles = new Set();
+          vehicles = discovered.flat().filter((vehicle) => {
+            const keyValue = vehicle.vin || `${vehicle.stockNumber || ""}|${vehicle.url || ""}`;
+            if (!keyValue || seenVehicles.has(keyValue)) return false;
+            seenVehicles.add(keyValue);
+            return true;
+          });
+        }
         if (!vehicles.length) continue;
         const incomplete = vehicles
           .filter((vehicle) => vehicle.url && (!vehicle.powertrain || !vehicle.trim))

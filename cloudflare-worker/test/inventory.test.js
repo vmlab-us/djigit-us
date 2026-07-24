@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { extractVehicles, rank, validateDealerUrl } from "../src/inventory.js";
+import {
+  extractVehicleLinks, extractVehicles, inventoryCandidates, rank, validateDealerUrl,
+} from "../src/inventory.js";
 
 const dealer = { id:"d1", name:"Dealer", website:"https://dealer.example", fleet:null };
 const fixture = `<script type="application/ld+json">{
@@ -52,6 +54,27 @@ describe("Worker inventory", () => {
     expect(()=>validateDealerUrl("http://dealer.example")).toThrow();
     expect(()=>validateDealerUrl("https://127.0.0.1/cars")).toThrow();
     expect(()=>validateDealerUrl("https://dealer.example/cars")).not.toThrow();
+  });
+  it("tries model-specific and generic inventory pages before the dealer homepage", () => {
+    const urls = inventoryCandidates(new URL("https://www.dealer.example/"), {
+      filters: { make:{ value:"Subaru" }, model:{ value:"WRX" } },
+    }).map((url) => url.href);
+    expect(urls[0]).toBe("https://www.dealer.example/new-subaru/wrx.htm");
+    expect(urls).toContain("https://www.dealer.example/new-inventory/index.htm");
+    expect(urls).toContain("https://www.dealer.example/search/new/");
+    expect(urls).toContain("https://www.dealer.example/sitemap.xml");
+    expect(urls.at(-1)).toBe("https://www.dealer.example/");
+    expect(new Set(urls).size).toBe(urls.length);
+  });
+  it("discovers same-host vehicle detail links from inventory HTML and sitemaps", () => {
+    const html = `
+      <a href="/viewdetails/new/JT123456789012345/2026-toyota-rav4-xle">RAV4</a>
+      <loc>https://www.dealer.example/new-toyota/rav4/JT999999999999999</loc>
+      <a href="https://outside.example/viewdetails/new/JT000000000000000/rav4">Outside</a>`;
+    expect(extractVehicleLinks(html,"https://www.dealer.example/","RAV4")).toEqual([
+      "https://www.dealer.example/viewdetails/new/JT123456789012345/2026-toyota-rav4-xle",
+      "https://www.dealer.example/new-toyota/rav4/JT999999999999999",
+    ]);
   });
   it("does not mistake a normal inventory page mentioning CAPTCHA for a challenge", () => {
     expect(extractVehicles(`${fixture}${" ".repeat(100_000)}captcha support`, dealer)).toHaveLength(1);

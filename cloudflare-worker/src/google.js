@@ -52,6 +52,7 @@ export async function readDirectory(env, force = false) {
   const params = new URLSearchParams();
   params.append("ranges", "'Дилерские центры'!A:K");
   params.append("ranges", "'Fleet-контакты'!A:J");
+  params.append("ranges", "'Аудит сайтов'!A:I");
   params.set("valueRenderOption", "FORMATTED_VALUE");
   const token = await accessToken(env);
   const response = await fetch(
@@ -60,7 +61,11 @@ export async function readDirectory(env, force = false) {
   );
   if (!response.ok) throw new Error("SHEETS_READ_FAILED");
   const data = await response.json();
-  const directory = linkDirectory(data.valueRanges?.[0]?.values ?? [], data.valueRanges?.[1]?.values ?? []);
+  const directory = linkDirectory(
+    data.valueRanges?.[0]?.values ?? [],
+    data.valueRanges?.[1]?.values ?? [],
+    data.valueRanges?.[2]?.values ?? [],
+  );
   const result = { dealers: directory, loadedAtIso: new Date().toISOString() };
   const cached = Response.json(result, { headers: { "cache-control": "public,max-age=1200" } });
   await cache.put(cacheKey, cached);
@@ -81,7 +86,12 @@ const number = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-export function linkDirectory(dealerValues, fleetValues) {
+export function linkDirectory(dealerValues, fleetValues, auditValues = []) {
+  const auditById = new Map(
+    rows(auditValues)
+      .map((row) => [clean(row["ID дилера"]), row])
+      .filter(([dealerId]) => dealerId),
+  );
   const fleet = new Map();
   for (const row of rows(fleetValues)) {
     const key = keyText(row["Дилерский центр"]);
@@ -93,19 +103,45 @@ export function linkDirectory(dealerValues, fleetValues) {
     };
     fleet.set(key, [...(fleet.get(key) ?? []), item]);
   }
-  return rows(dealerValues).map((row) => {
+  const dealers = rows(dealerValues).map((row) => {
     const name = clean(row["Дилерский центр"]);
     const matches = fleet.get(keyText(name)) ?? [];
+    const id = clean(row["ID дилера"]) || keyText(name).replace(/[^a-z0-9]+/g, "-");
+    const audit = auditById.get(id);
+    const auditResult = clean(audit?.["Результат"]).toUpperCase();
+    const auditedUrl = clean(audit?.["Конечный URL"]);
     return {
-      id: clean(row["ID дилера"]) || keyText(name).replace(/[^a-z0-9]+/g, "-"),
+      id,
       brand: clean(row["Бренд"]) || null, name,
       distanceMiles: number(row["Расстояние (мили)"]),
       address: clean(row["Адрес / сведения из карточки"]) || null,
       phone: clean(row["Телефон"]) || null,
-      website: clean(row["Веб-сайт"]) || null,
+      website: auditedUrl && /^https?:\/\//i.test(auditedUrl)
+        ? auditedUrl
+        : clean(row["Веб-сайт"]) || null,
       mapsUrl: clean(row["Google Maps"]) || null,
+      auditResult,
+      auditRecommendation: clean(audit?.["Рекомендация"]) || null,
       fleet: matches.length === 1 ? matches[0] : null,
       fleetLinkStatus: matches.length === 1 ? "matched" : matches.length ? "ambiguous" : "unmatched",
     };
+  });
+  const nonSalesDepartment = (dealer) =>
+    /\b(?:parts|service|collision(?: center)?|body shop|auto repair|independent)\s*$/i.test(dealer.name) ||
+    /\/(?:parts|service|collision|body-shop|auto-repair)(?:\/|$)/i.test(dealer.website ?? "");
+  const seen = new Set();
+  return dealers.filter((dealer) => {
+    if (!dealer.name || !dealer.brand || !dealer.website || nonSalesDepartment(dealer)) return false;
+    if (["НЕВЕРНАЯ ССЫЛКА", "ССЫЛКА ОТСУТСТВУЕТ"].includes(dealer.auditResult)) return false;
+    try {
+      const parsed = new URL(dealer.website.replace(/^http:/i, "https:"));
+      const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+      const key = `${dealer.brand.toLowerCase()}|${host}|${parsed.port}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    } catch {
+      return false;
+    }
   });
 }
