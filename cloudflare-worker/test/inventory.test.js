@@ -17,6 +17,18 @@ describe("Worker inventory", () => {
       url:"https://dealer.example/vehicle/JT123",
     });
   });
+  it("infers trim from the vehicle name without drivetrain and transmission", () => {
+    const html = `<script type="application/ld+json">${JSON.stringify({
+      "@type":"Vehicle", name:"New 2026 Kia Sportage LX FWD Automatic",
+      vehicleModelDate:"2026", brand:{name:"Kia"}, model:"Sportage",
+      vehicleIdentificationNumber:"5XYK23DF0TG439927",
+      fuelType:"Gasoline Fuel", offers:{price:"30485",availability:"InStock"},
+    })}</script>`;
+    expect(extractVehicles(html, dealer)[0]).toMatchObject({
+      name:"New 2026 Kia Sportage LX FWD Automatic",
+      trim:"LX", powertrain:"Gasoline Fuel",
+    });
+  });
   it("keeps exact and close matches deterministic", () => {
     const [vehicle]=extractVehicles(fixture,dealer);
     const [result]=rank([vehicle],{

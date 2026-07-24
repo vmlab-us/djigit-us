@@ -168,7 +168,7 @@ function card(item) {
   const v = item.vehicle, d = v.dealer, price = v.price ?? v.msrp;
   return `<article class="card"><span class="badge">${item.exact ? "Точное" : "Близкое"}</span>
     ${fleetMobilePhone(d) ? `<span class="badge fleet-badge">Fleet mobile</span>` : ""}
-    <h3>${escapeHtml([v.year,v.make,v.model,v.trim].filter(Boolean).join(" "))}</h3>
+    <h3>${escapeHtml(v.name || [v.year,v.make,v.model,v.trim].filter(Boolean).join(" "))}</h3>
     ${item.explanations.length ? `<ul class="diff">${item.explanations.map((x)=>`<li>${escapeHtml(x)}</li>`).join("")}</ul>` : ""}
     <div class="meta">
       <span>Цена: ${price == null ? "Не указана" : `$${price.toLocaleString()}`}</span>
@@ -217,7 +217,7 @@ function contact(dealer) {
 function vehicleSummary(vehicle) {
   const amount = vehicle.price ?? vehicle.msrp;
   return [
-    [vehicle.year, vehicle.make, vehicle.model, vehicle.trim].filter(Boolean).join(" "),
+    vehicle.name || [vehicle.year, vehicle.make, vehicle.model, vehicle.trim].filter(Boolean).join(" "),
     vehicle.vin ? `VIN: ${vehicle.vin}` : null,
     vehicle.stockNumber ? `Stock #: ${vehicle.stockNumber}` : null,
     amount != null ? `Advertised price: $${Number(amount).toLocaleString("en-US")}` : null,

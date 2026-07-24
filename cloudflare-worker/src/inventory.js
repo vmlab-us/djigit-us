@@ -4,6 +4,23 @@ const price = (value) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 };
 const text = (value) => typeof value === "object" ? value?.name ?? null : value;
+const inferTrim = (vehicle) => {
+  const explicit = clean(vehicle.vehicleConfiguration ?? vehicle.trim);
+  if (explicit) return explicit;
+  const name = clean(vehicle.name);
+  const model = clean(vehicle.model);
+  if (!name || !model) return null;
+  const modelIndex = name.toLowerCase().indexOf(model.toLowerCase());
+  if (modelIndex < 0) return null;
+  const inferred = clean(name.slice(modelIndex + model.length)
+    .replace(/\b(?:for sale|available at|at)\b.*$/i, "")
+    .replace(/\b(?:plug[- ]?in hybrid|hybrid|electric|diesel|gasoline|gas)\b/gi, " ")
+    .replace(/\b(?:AWD|FWD|RWD|4WD|4X4|all[- ]wheel drive|front[- ]wheel drive|rear[- ]wheel drive)\b/gi, " ")
+    .replace(/\b(?:automatic|manual|CVT|A\/T|M\/T|transmission)\b/gi, " ")
+    .replace(/\b(?:2D|4D)?\s*(?:sport utility|SUV|sedan|coupe|hatchback|pickup|truck|wagon|minivan|van)\b/gi, " ")
+    .replace(/^[\s|,/-]+|[\s|,/-]+$/g, ""));
+  return inferred && inferred.length <= 60 ? inferred : null;
+};
 const walk = (node, output) => {
   if (!node) return;
   if (Array.isArray(node)) return node.forEach((item) => walk(item, output));
@@ -67,14 +84,15 @@ export function extractVehicles(html, dealer, checkedAt = new Date().toISOString
     const stockNumber = clean(vehicle.stockNumber ?? vehicle.mpn) ||
       (sku && sku.toUpperCase() !== vin ? sku : null);
     return {
+      name: clean(vehicle.name) || null,
       year: Number(vehicle.vehicleModelDate ?? vehicle.productionDate) || null,
       make: clean(text(vehicle.brand) ?? text(vehicle.manufacturer)) || null,
       model: clean(vehicle.model) || null,
-      trim: clean(vehicle.vehicleConfiguration) || null,
+      trim: inferTrim(vehicle),
       condition: /used|pre-owned/i.test(clean(offer.itemCondition ?? vehicle.itemCondition)) ? "Used" :
         /certified|cpo/i.test(clean(offer.itemCondition ?? vehicle.itemCondition)) ? "CPO" : "New",
       bodyStyle: clean(vehicle.bodyType) || null,
-      powertrain: clean(vehicle.fuelType) || null,
+      powertrain: clean(vehicle.fuelType ?? text(vehicle.vehicleEngine)) || null,
       transmission: clean(vehicle.vehicleTransmission) || null,
       drivetrain: clean(vehicle.driveWheelConfiguration) || null,
       exteriorColor: clean(vehicle.color) || null,
