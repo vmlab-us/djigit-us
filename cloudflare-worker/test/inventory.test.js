@@ -62,6 +62,16 @@ describe("Worker inventory", () => {
     expect(rank([{...base,name:"2027 Mercedes-Benz CLA 350"}],filters)).toEqual([]);
     expect(rank([{...base,name:"2026 Mercedes-Benz GLB 250 SUV"}],filters)).toHaveLength(1);
   });
+  it("accepts model fields prefixed with the manufacturer name", () => {
+    const vehicle = {
+      name:"New 2026 Mazda Mazda CX-5 2.5 S AWD",
+      make:"Mazda", model:"Mazda CX-5", condition:"New", dealer,
+    };
+    expect(rank([vehicle],{
+      make:{value:"Mazda",required:true},
+      model:{value:"CX-5",required:true},
+    })).toHaveLength(1);
+  });
   it("rejects internal dealer URLs", () => {
     expect(()=>validateDealerUrl("http://dealer.example")).toThrow();
     expect(()=>validateDealerUrl("https://127.0.0.1/cars")).toThrow();
@@ -87,6 +97,15 @@ describe("Worker inventory", () => {
       "https://www.dealer.example/viewdetails/new/JT123456789012345/2026-toyota-rav4-xle",
       "https://www.dealer.example/new-toyota/rav4/JT999999999999999",
     ]);
+  });
+  it("prioritizes detail links containing the requested model over unrelated VIN links", () => {
+    const unrelated = Array.from({ length: 9 }, (_, index) =>
+      `<a href="/viewdetails/new/JT0000000000000${String(index).padStart(2, "0")}/2026-toyota-camry">Camry</a>`
+    ).join("");
+    const html = `${unrelated}
+      <a href="/viewdetails/new/JT999999999999999/2026-toyota-rav4-xle">RAV4</a>`;
+    expect(extractVehicleLinks(html, "https://www.dealer.example/", "RAV4", 8)[0])
+      .toContain("rav4");
   });
   it("does not mistake a normal inventory page mentioning CAPTCHA for a challenge", () => {
     expect(extractVehicles(`${fixture}${" ".repeat(100_000)}captcha support`, dealer)).toHaveLength(1);

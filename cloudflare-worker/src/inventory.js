@@ -94,7 +94,8 @@ const comparableHostname = (value) => value.toLowerCase().replace(/^www\./, "");
 export function extractVehicleLinks(html, baseUrl, model = "", limit = 8) {
   const base = validateDealerUrl(baseUrl);
   const modelNeedle = modelSlug(model);
-  const links = [];
+  const modelLinks = [];
+  const fallbackLinks = [];
   const candidates = html.matchAll(
     /(?:href\s*=\s*["']([^"'#]+)["']|<loc>\s*([^<\s]+)\s*<\/loc>)/gi,
   );
@@ -112,12 +113,13 @@ export function extractVehicleLinks(html, baseUrl, model = "", limit = 8) {
     const normalized = modelSlug(url.pathname);
     const looksLikeVehicle = /[A-HJ-NPR-Z0-9]{17}/i.test(url.href) ||
       /(?:viewdetails|vehicle-details|vehicle\/|inventory\/.*(?:new|used)|\/(?:new|used)-)/i.test(url.pathname);
-    if (!looksLikeVehicle || (modelNeedle && !normalized.includes(modelNeedle) &&
-        !/[A-HJ-NPR-Z0-9]{17}/i.test(url.href))) continue;
-    if (!links.includes(url.href)) links.push(url.href);
-    if (links.length >= limit) break;
+    if (!looksLikeVehicle) continue;
+    const target = !modelNeedle || normalized.includes(modelNeedle)
+      ? modelLinks
+      : fallbackLinks;
+    if (!target.includes(url.href)) target.push(url.href);
   }
-  return links;
+  return [...modelLinks, ...fallbackLinks].slice(0, limit);
 }
 
 export function extractVehicles(html, dealer, checkedAt = new Date().toISOString()) {
@@ -179,13 +181,19 @@ const modelTokens = (value) => key(value)
   .trim()
   .split(/\s+/)
   .filter(Boolean);
+const containsTokenSequence = (tokens, expected) => {
+  if (!tokens.length || !expected.length || expected.length > tokens.length) return false;
+  return tokens.some((_, index) =>
+    expected.every((token, offset) => tokens[index + offset] === token));
+};
 const matches = (field, value, expected) => {
   if (field === "yearMin") return value >= expected;
   if (field === "yearMax" || field === "priceMax" || field === "mileageMax") return value <= expected;
   if (field === "model") {
-    const actualModel = modelTokens(value)[0];
-    const expectedModel = modelTokens(expected)[0];
-    return Boolean(actualModel && expectedModel && actualModel === expectedModel);
+    const actualModel = modelTokens(value);
+    const expectedModel = modelTokens(expected);
+    return containsTokenSequence(actualModel, expectedModel) ||
+      containsTokenSequence(expectedModel, actualModel);
   }
   return key(value).includes(key(expected));
 };
