@@ -26,6 +26,15 @@ it("excludes non-sales departments and duplicate brand domains", () => {
   expect(linkDirectory(dealers,[]).map((dealer) => dealer.id)).toEqual(["d1"]);
 });
 
+it("excludes duplicate dealer names even when aliases use different domains", () => {
+  const dealers=[
+    ["ID дилера","Бренд","Дилерский центр","Расстояние (мили)","Адрес / сведения из карточки","Телефон","Веб-сайт"],
+    ["d1","Honda","Honda Santa Monica","8","LA","111","https://hondasantamonica.example/"],
+    ["d2","Honda","Honda Santa Monica","8","LA","111","https://santamonicahonda.example/"],
+  ];
+  expect(linkDirectory(dealers,[]).map((dealer) => dealer.id)).toEqual(["d1"]);
+});
+
 it("uses audited final URL and excludes invalid links", () => {
   const dealers=[
     ["ID дилера","Бренд","Дилерский центр","Расстояние (мили)","Адрес / сведения из карточки","Телефон","Веб-сайт"],

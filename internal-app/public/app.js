@@ -100,9 +100,16 @@ $("searchForm").addEventListener("submit", async (event) => {
   if (!filters.make || !filters.model) return showMessage("Укажите марку и модель в строке запроса или фильтрах.");
   const distanceValue = $("distance").value.trim();
   const maxDistance = distanceValue && Number(distanceValue) >= 1 ? Number(distanceValue) : undefined;
-  const selected = directory.filter((dealer) =>
+  const matchingDealers = directory.filter((dealer) =>
     dealer.website && dealer.brand?.toLowerCase().includes(filters.make.value.toLowerCase()) &&
     (maxDistance === undefined || dealer.distanceMiles === null || dealer.distanceMiles <= maxDistance));
+  const selectedByName = new Map();
+  for (const dealer of matchingDealers) {
+    const key = `${String(dealer.brand).trim().toLowerCase()}|${String(dealer.name).trim().toLowerCase()}`;
+    const existing = selectedByName.get(key);
+    if (!existing || (!existing.fleet && dealer.fleet)) selectedByName.set(key, dealer);
+  }
+  const selected = [...selectedByName.values()];
   $("directoryStatus").textContent =
     `Ищем: ${filters.make.value} ${filters.model.value}` +
     `${filters.powertrain?.value ? ` · ${filters.powertrain.value}` : ""}` +
@@ -375,6 +382,12 @@ function dedupeAndSort(search) {
   const unique=(items)=>items.filter(({vehicle})=>{const key=vehicle.vin?`vin:${vehicle.vin}`:`${vehicle.dealer.id}:${vehicle.stockNumber||""}:${vehicle.url||""}`;if(seen.has(key))return false;seen.add(key);return true;});
   search.exact=unique(search.exact).sort(resultComparator);
   search.close=unique(search.close).sort(resultComparator);
+  const failedSeen=new Set();
+  search.failed=search.failed.filter((item)=>{
+    const key=`${String(item.dealerName).trim().toLowerCase()}|${String(item.reason).trim().toLowerCase()}`;
+    if(failedSeen.has(key))return false;
+    failedSeen.add(key);return true;
+  });
 }
 async function initializeLogin() {
   const config=await fetch(`${API_ORIGIN}/api/auth/config`).then((response)=>response.json());

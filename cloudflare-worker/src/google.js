@@ -144,6 +144,7 @@ export function linkDirectory(dealerValues, fleetValues, auditValues = []) {
     /\b(?:parts|service|collision(?: center)?|body shop|auto repair|independent)\s*$/i.test(dealer.name) ||
     /\/(?:parts|service|collision|body-shop|auto-repair)(?:\/|$)/i.test(dealer.website ?? "");
   const seen = new Set();
+  const seenNames = new Set();
   return dealers.filter((dealer) => {
     if (!dealer.name || !dealer.brand || !dealer.website || nonSalesDepartment(dealer)) return false;
     if (
@@ -154,8 +155,10 @@ export function linkDirectory(dealerValues, fleetValues, auditValues = []) {
       const parsed = new URL(dealer.website.replace(/^http:/i, "https:"));
       const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
       const key = `${dealer.brand.toLowerCase()}|${host}|${parsed.port}`;
-      if (seen.has(key)) return false;
+      const nameKey = `${dealer.brand.toLowerCase()}|${keyText(dealer.name)}`;
+      if (seen.has(key) || seenNames.has(nameKey)) return false;
       seen.add(key);
+      seenNames.add(nameKey);
       return true;
     } catch {
       return false;
