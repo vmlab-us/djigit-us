@@ -40,23 +40,20 @@ export const curatedModels = {
   Volkswagen:["Atlas","Atlas Cross Sport","Golf GTI","Golf R","ID.4","ID. Buzz","Jetta","Taos","Tiguan"],
   Volvo:["EC40","EX30","EX40","EX90","S60","S90","V60","XC40","XC60","XC90"],
 };
-const excludedModels = {
-  Audi:["A4"],
-  Chevrolet:["Bolt EUV","Malibu"],
-  Chrysler:["300"],
-  Dodge:["Challenger"],
-  Ford:["Edge"],
-  Hyundai:["Venue"],
-  Jeep:["Renegade"],
-  Kia:["Forte","Miami","Stinger","Tekiar"],
-  Lexus:["RC"],
-  "Mercedes-Benz":["A-Class","EQA","Metris"],
-  Nissan:["Altima","GT-R","Titan","Versa"],
-  Ram:["1500 Classic","ProMaster City"],
-  Subaru:["Legacy"],
-  Toyota:["Venza"],
-  Volkswagen:["Arteon"],
-  Volvo:["C40 Recharge","V90"],
+const modelKey = (value) => String(value ?? "").toLowerCase()
+  .replace(/\b(?:class|series)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+const sameRetailModel = (left, right) => {
+  const a = modelKey(left), b = modelKey(right);
+  return a === b || (a.length >= 3 && b.length >= 3 && (a.startsWith(`${b} `) || b.startsWith(`${a} `)));
+};
+export const selectCurrentModels = (make, officialModels = []) => {
+  const curated = curatedModels[make] ?? [];
+  if (!curated.length) return [];
+  const official = officialModels.filter(Boolean);
+  const confirmed = curated.filter((model) => official.some((item) => sameRetailModel(model, item)));
+  const minimumUsefulMatch = Math.max(3, Math.ceil(curated.length * 0.4));
+  return (confirmed.length >= minimumUsefulMatch ? confirmed : curated)
+    .sort((a, b) => a.localeCompare(b, "en", { sensitivity:"base" }));
 };
 const withHeaders = (response) => {
   const result = new Response(response.body, response);
@@ -96,7 +93,7 @@ export default {
         const currentYear = new Date().getUTCFullYear();
         const modelYears = [currentYear, currentYear + 1];
         const cacheKey = new Request(
-          `https://cache.internal/models-v4/${currentYear}/${encodeURIComponent(make.toLowerCase())}`,
+          `https://cache.internal/models-v5/${currentYear}/${encodeURIComponent(make.toLowerCase())}`,
         );
         const forceRefresh = url.searchParams.get("refresh") === "1";
         const cached = forceRefresh ? null : await caches.default.match(cacheKey);
@@ -113,16 +110,10 @@ export default {
         const official = responses.flatMap((data) => data?.Results ?? [])
           .map((item) => String(item.Model_Name ?? "").trim())
           .filter((model) => model && model.length <= 60 && /^[A-Za-z0-9 .&+/-]+$/.test(model));
-        const excluded = new Set(
-          (excludedModels[make] ?? []).map((model) => model.toLowerCase()),
-        );
-        const current = official.filter((model) => !excluded.has(model.toLowerCase()));
-        const curated = curatedModels[make] ?? [];
-        const models = [...new Set(current.length >= 3 ? current : curated)]
-          .sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
+        const models = selectCurrentModels(make, [...new Set(official)]);
         if (!models.length) return json({ error: "Для этой марки модели не найдены." }, 404);
         const result = Response.json(
-          { make, models, modelYears },
+          { make, models, modelYears, source:"curated-us-retail+nhtsa-validation" },
           { headers: { "cache-control": "public,max-age=86400" } },
         );
         await caches.default.put(cacheKey, result.clone());

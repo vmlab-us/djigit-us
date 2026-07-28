@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { curatedModels } from "../src/index.js";
+import { curatedModels, selectCurrentModels } from "../src/index.js";
 
 describe("Current US model catalog", () => {
   it("uses a curated list for every supported dealer brand", () => {
@@ -8,6 +8,22 @@ describe("Current US model catalog", () => {
       expect(models.length).toBeGreaterThan(0);
       expect(models).toEqual([...new Set(models)]);
     }
+  });
+
+  it("never exposes NHTSA motorcycle and commercial chassis names", () => {
+    const models = selectCurrentModels("Honda", [
+      "Accord", "Civic", "CR-V", "HR-V", "Odyssey", "Passport", "Pilot", "Prologue", "Ridgeline",
+      "CRF110F", "CRF450R", "FourTrax Foreman Rubicon", "Gold Wing Tour", "Grom", "NT1100",
+    ]);
+    expect(models).toEqual([
+      "Accord", "Civic", "CR-V", "HR-V", "Odyssey", "Passport", "Pilot", "Prologue", "Ridgeline",
+    ]);
+  });
+
+  it("falls back to the US retail lineup when NHTSA naming is incomplete", () => {
+    expect(selectCurrentModels("Mercedes-Benz", ["GLB-Class"])).toEqual(
+      [...curatedModels["Mercedes-Benz"]].sort((a,b)=>a.localeCompare(b,"en",{sensitivity:"base"})),
+    );
   });
 
   it("excludes representative discontinued models", () => {
