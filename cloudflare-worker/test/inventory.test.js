@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   extractDealerOnVehicles, extractDealerVenomVehicles, extractEmbeddedVehicles, extractLlmVehicles,
-  extractVehicleLinks, extractVehicles,
+  extractJazelVehicles, extractVehicleLinks, extractVehicles,
   inventoryCandidates, rank, validateDealerUrl,
 } from "../src/inventory.js";
 
@@ -144,6 +144,20 @@ describe("Worker inventory", () => {
       trim:"LX", condition:"New", powertrain:"Gasoline", drivetrain:"FWD",
       vin:"5XYK23DF0TG439927", stockNumber:"2N20323", price:30485, msrp:31000,
       url:"https://dealer.example/vehicle/New/2026/Kia/Sportage/5XYK23DF0TG439927/",
+    })]);
+  });
+  it("extracts Jazel data-vehicle inventory cards", () => {
+    const payload = JSON.stringify({
+      year:"2026",make:"Honda",model:"CR-V",trim:"EX-L",bodyType:["SUV"],
+      fuelType:"Gasoline",vin:"2HKRS4H71TH497477",exterior_color:"White",
+      drivetrain:"All Wheel Drive",transmission:"CVT",condition:"new",
+      mileage:4,price:"35,975",stockNumber:"H263795",
+    }).replaceAll('"', "&quot;");
+    const html = `<div data-vehicle="${payload}"></div>`;
+    expect(extractJazelVehicles(html, dealer)).toEqual([expect.objectContaining({
+      name:"2026 Honda CR-V EX-L", year:2026, make:"Honda", model:"CR-V",
+      trim:"EX-L", powertrain:"Gasoline", drivetrain:"All Wheel Drive",
+      vin:"2HKRS4H71TH497477", stockNumber:"H263795", price:35975, mileage:4,
     })]);
   });
   it("discovers same-host vehicle detail links from inventory HTML and sitemaps", () => {

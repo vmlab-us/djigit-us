@@ -68,6 +68,7 @@ export function validateDealerUrl(value) {
 }
 
 const modelSlug = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const jazelModelSegment = (value) => clean(value).replace(/-/g, "--").replace(/\s+/g, "_");
 export const inventoryCandidates = (dealerUrl, query) => {
   const make = clean(query?.filters?.make?.value);
   const model = clean(query?.filters?.model?.value);
@@ -215,6 +216,43 @@ export function extractEmbeddedVehicles(html, dealer, checkedAt = new Date().toI
     if (!vehicle.make || !vehicle.model || seen.has(vehicle.vin)) return false;
     seen.add(vehicle.vin); return true;
   });
+}
+
+export function extractJazelVehicles(html, dealer, checkedAt = new Date().toISOString()) {
+  const seen = new Set();
+  const vehicles = [];
+  for (const match of html.matchAll(/\bdata-vehicle\s*=\s*["']([^"']+)["']/gi)) {
+    let item;
+    try { item = JSON.parse(decodeHtml(match[1])); } catch { continue; }
+    const vin = clean(item.vin).toUpperCase();
+    if (!item.make || !item.model || !vin || seen.has(vin)) continue;
+    seen.add(vin);
+    const body = Array.isArray(item.bodyType) ? item.bodyType[0] : item.bodyType;
+    const name = clean(`${item.year} ${item.make} ${item.model} ${item.trim}`);
+    vehicles.push({
+      name:name || null,
+      year:Number(item.year) || null,
+      make:clean(item.make) || null,
+      model:clean(item.model) || null,
+      trim:clean(item.trim) || null,
+      condition:/used|pre-owned/i.test(clean(item.condition)) ? "Used" :
+        /certified|cpo/i.test(clean(item.condition)) ? "CPO" : "New",
+      bodyStyle:clean(body) || null,
+      powertrain:powertrainDescription({ fuelType:item.fuelType, name }),
+      transmission:clean(item.transmission) || null,
+      drivetrain:clean(item.drivetrain) || null,
+      exteriorColor:clean(item.exterior_color ?? item.exteriorColor) || null,
+      interiorColor:clean(item.interior_color ?? item.interiorColor) || null,
+      vin,
+      stockNumber:clean(item.stockNumber) || null,
+      price:price(item.price), msrp:price(item.msrp), mileage:price(item.mileage),
+      status:"In Stock", features:Array.isArray(item.features) ? item.features : [],
+      imageUrl:safeUrl(item.imageUrl ?? item.image, dealer.website),
+      url:safeUrl(item.url ?? item.vdpUrl, dealer.website),
+      checkedAt, dealer,
+    });
+  }
+  return vehicles;
 }
 const comparableHostname = (value) => value.toLowerCase().replace(/^www\./, "");
 const dealerHeaders = () => ({
@@ -592,6 +630,29 @@ export async function searchDealer(dealer, query) {
         );
         if (!vehicles) vehicles = extractVehicles(html, dealer);
         if (!vehicles.length) vehicles = extractEmbeddedVehicles(html, dealer);
+        if (!vehicles.length) vehicles = extractJazelVehicles(html, dealer);
+        if (!vehicles.length && /search-tango\.jazelc\.com|jzl-auto5-products/i.test(html)) {
+          const make = clean(query?.filters?.make?.value);
+          const model = clean(query?.filters?.model?.value);
+          if (make && model) {
+            const jazelUrl = new URL(
+              `/inventory/new-vehicles/models-${encodeURIComponent(make)}-${encodeURIComponent(jazelModelSegment(model))}/`,
+              dealerUrl.origin,
+            );
+            const jazelResponse = await fetch(jazelUrl, {
+              signal:controller.signal, redirect:"follow", headers:dealerHeaders(),
+              cf:{ cacheTtl:300, cacheEverything:true },
+            });
+            const finalJazelUrl = validateDealerUrl(jazelResponse.url || jazelUrl.href);
+            if (jazelResponse.ok &&
+                comparableHostname(finalJazelUrl.hostname) === comparableHostname(dealerUrl.hostname)) {
+              const jazelLength = Number(jazelResponse.headers.get("content-length") ?? 0);
+              if (jazelLength <= 2_000_000) {
+                vehicles = extractJazelVehicles(await jazelResponse.text(), dealer);
+              }
+            }
+          }
+        }
         if (!vehicles.length && finalUrl.pathname.startsWith("/llm/inventory")) {
           vehicles = extractLlmVehicles(html, dealer, query);
         }
