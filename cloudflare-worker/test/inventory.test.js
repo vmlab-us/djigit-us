@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  extractDealerOnVehicles, extractEmbeddedVehicles, extractLlmVehicles, extractVehicleLinks, extractVehicles,
+  extractDealerOnVehicles, extractDealerVenomVehicles, extractEmbeddedVehicles, extractLlmVehicles,
+  extractVehicleLinks, extractVehicles,
   inventoryCandidates, rank, validateDealerUrl,
 } from "../src/inventory.js";
 
@@ -127,6 +128,22 @@ describe("Worker inventory", () => {
       powertrain:"Gasoline", drivetrain:"RWD", price:80120, msrp:82000,
       vin:"1GNS5EK84TR291376", stockNumber:"CD-009", status:"In Stock",
       url:"https://dealer.example/vehicle/1GNS5EK84TR291376",
+    })]);
+  });
+  it("normalizes Dealer Venom Typesense results", () => {
+    const payload = {hits:[{document:{
+      vehicleTitle:"2026 Kia Sportage LX", year:"2026", make:"Kia", model:"Sportage",
+      trim:"LX", condition:"New", fuel:"Gasoline", drivetrain:"FWD",
+      vin:"5XYK23DF0TG439927", stockNumber:"2N20323", finalPriceInt:30485,
+      msrp:"$31,000", mileage:0, status:"In Stock", exteriorColor:"Black",
+      vdpUrl:"/vehicle/New/2026/Kia/Sportage/5XYK23DF0TG439927/",
+      imageUrls:["https://dealer.example/sportage.jpg"],
+    }}]};
+    expect(extractDealerVenomVehicles(payload, dealer)).toEqual([expect.objectContaining({
+      name:"2026 Kia Sportage LX", year:2026, make:"Kia", model:"Sportage",
+      trim:"LX", condition:"New", powertrain:"Gasoline", drivetrain:"FWD",
+      vin:"5XYK23DF0TG439927", stockNumber:"2N20323", price:30485, msrp:31000,
+      url:"https://dealer.example/vehicle/New/2026/Kia/Sportage/5XYK23DF0TG439927/",
     })]);
   });
   it("discovers same-host vehicle detail links from inventory HTML and sitemaps", () => {

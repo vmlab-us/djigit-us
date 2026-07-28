@@ -79,6 +79,7 @@ export const inventoryCandidates = (dealerUrl, query) => {
     slug && new URL(`/new-${modelSlug(make)}/${slug}.htm`, origin),
     slug && new URL(`/new-vehicles/${slug}/`, origin),
     model && new URL(`/inventory/new/?model=${encodeURIComponent(model)}`, origin),
+    model && new URL(`/new-inventory/index.htm?model=${encodeURIComponent(model)}`, origin),
     model && new URL(`/new-inventory/index.htm?search=${encodeURIComponent(model)}`, origin),
     model && new URL(`/new-vehicles/?model=${encodeURIComponent(model)}`, origin),
     model && new URL(
@@ -308,6 +309,85 @@ const fetchDealerOnVehicles = async (html, finalUrl, dealer, query, signal) => {
   return extractDealerOnVehicles(await response.json(), dealer);
 };
 
+const dealerVenomConfig = (html) => {
+  const indexName = html.match(/\bindexName\s*=\s*["']([^"']+)["']/)?.[1];
+  const apiKey = html.match(/\bapiKey\s*:\s*["']([^"']+)["']/)?.[1];
+  const host = html.match(/\bhost\s*:\s*["']([^"']+\.typesense\.net)["']/i)?.[1];
+  if (!indexName || !apiKey || !host || !/^[a-z0-9.-]+$/i.test(host)) return null;
+  return { indexName, apiKey, host };
+};
+
+export function extractDealerVenomVehicles(payload, dealer, checkedAt = new Date().toISOString()) {
+  const hits = Array.isArray(payload?.hits) ? payload.hits : [];
+  const seen = new Set();
+  return hits.map((hit) => {
+    const item = hit?.document;
+    if (!item) return null;
+    const vin = clean(item.vin).toUpperCase();
+    const name = clean(item.vehicleTitle) || clean(`${item.year} ${item.make} ${item.model} ${item.trim}`);
+    return {
+      name:name || null,
+      year:Number(item.year ?? item.yr) || null,
+      make:clean(item.make) || null,
+      model:clean(item.model) || null,
+      trim:clean(item.trim ?? item.altStyle) || null,
+      condition:/used|pre-owned/i.test(clean(item.condition)) ? "Used" :
+        /certified|cpo/i.test(clean(item.condition)) ? "CPO" : "New",
+      bodyStyle:clean(item.body) || null,
+      powertrain:powertrainDescription({
+        fuelType:item.fuel, vehicleEngine:item.engine, name,
+      }),
+      transmission:clean(item.transmission) || null,
+      drivetrain:clean(item.drivetrain) || null,
+      exteriorColor:clean(item.exteriorColor) || null,
+      interiorColor:clean(item.interiorColor) || null,
+      vin:vin || null,
+      stockNumber:clean(item.stockNumber) || null,
+      price:price(item.finalPriceInt ?? item.price ?? item.finalPrice ?? item.internetPrice),
+      msrp:price(item.msrp),
+      mileage:price(item.mileage),
+      status:clean(item.status) || (item.flags?.inTransit ? "In Transit" : "In Stock"),
+      features:Array.isArray(item.features) ? item.features.map(clean).filter(Boolean) : [],
+      imageUrl:safeUrl(item.imageUrls?.[0], dealer.website),
+      url:safeUrl(item.vdpUrl, dealer.website),
+      checkedAt, dealer,
+    };
+  }).filter((vehicle) => {
+    if (!vehicle?.make || !vehicle.model) return false;
+    const identity = vehicle.vin || `${vehicle.stockNumber || ""}|${vehicle.url || ""}`;
+    if (!identity || seen.has(identity)) return false;
+    seen.add(identity); return true;
+  });
+}
+
+const fetchDealerVenomVehicles = async (html, dealer, query, signal) => {
+  const config = dealerVenomConfig(html);
+  if (!config) return null;
+  const endpoint = new URL(
+    `/collections/${encodeURIComponent(config.indexName)}/documents/search`,
+    `https://${config.host}`,
+  );
+  const requestedModel = clean(query?.filters?.model?.value);
+  endpoint.searchParams.set("q", requestedModel || "*");
+  endpoint.searchParams.set(
+    "query_by",
+    "vin,stockNumber,lastEight,year,make,model,trim,exteriorColor,body,features,engine,transmission,drivetrain,fuel,genericColor,dealertag",
+  );
+  endpoint.searchParams.set("filter_by", "condition:=New");
+  endpoint.searchParams.set("per_page", "50");
+  const response = await fetch(endpoint, {
+    signal, redirect:"follow",
+    headers:{ accept:"application/json", "x-typesense-api-key":config.apiKey },
+    cf:{ cacheTtl:300, cacheEverything:true },
+  });
+  const responseUrl = new URL(response.url || endpoint.href);
+  if (responseUrl.protocol !== "https:" || !responseUrl.hostname.endsWith(".typesense.net")) {
+    throw new Error("UNSAFE_TYPESENSE_REDIRECT");
+  }
+  if (!response.ok) throw new Error(`DEALERVENOM_HTTP_${response.status}`);
+  return extractDealerVenomVehicles(await response.json(), dealer);
+};
+
 export function extractVehicleLinks(html, baseUrl, model = "", limit = 8) {
   const base = validateDealerUrl(baseUrl);
   const modelNeedle = modelSlug(model);
@@ -506,6 +586,9 @@ export async function searchDealer(dealer, query) {
         const html = await response.text();
         let vehicles = await fetchDealerOnVehicles(
           html, finalUrl, dealer, query, controller.signal,
+        );
+        if (!vehicles) vehicles = await fetchDealerVenomVehicles(
+          html, dealer, query, controller.signal,
         );
         if (!vehicles) vehicles = extractVehicles(html, dealer);
         if (!vehicles.length) vehicles = extractEmbeddedVehicles(html, dealer);
