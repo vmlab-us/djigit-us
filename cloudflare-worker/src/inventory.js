@@ -74,7 +74,11 @@ export const inventoryCandidates = (dealerUrl, query) => {
   const slug = modelSlug(model);
   const origin = dealerUrl.origin;
   return [
+    new URL("/llm/inventory/?type=new", origin),
+    model && new URL(`/searchnew.aspx?q=${encodeURIComponent(model)}`, origin),
     slug && new URL(`/new-${modelSlug(make)}/${slug}.htm`, origin),
+    slug && new URL(`/new-vehicles/${slug}/`, origin),
+    model && new URL(`/inventory/new/?model=${encodeURIComponent(model)}`, origin),
     model && new URL(`/new-inventory/index.htm?search=${encodeURIComponent(model)}`, origin),
     model && new URL(`/new-vehicles/?model=${encodeURIComponent(model)}`, origin),
     model && new URL(
@@ -89,7 +93,220 @@ export const inventoryCandidates = (dealerUrl, query) => {
   ].filter(Boolean).filter((candidate, index, candidates) =>
     candidates.findIndex((item) => item.href === candidate.href) === index);
 };
+
+const decodeHtml = (value) => String(value ?? "")
+  .replace(/&nbsp;|&#160;/gi, " ")
+  .replace(/&amp;/gi, "&")
+  .replace(/&quot;|&#34;/gi, '"')
+  .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&lt;/gi, "<")
+  .replace(/&gt;/gi, ">");
+
+const htmlToLines = (html) => decodeHtml(html)
+  .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+  .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+  .replace(/<(?:br|\/?p|\/?li|\/?h[1-6]|\/?article|\/?div)\b[^>]*>/gi, "\n")
+  .replace(/<[^>]+>/g, " ")
+  .split(/\n+/)
+  .map(clean)
+  .filter(Boolean)
+  .join("\n");
+
+const titleParts = (title, query) => {
+  const requestedMake = clean(query?.filters?.make?.value);
+  const requestedModel = clean(query?.filters?.model?.value);
+  const yearMatch = clean(title).match(/\b(20\d{2})\b/);
+  let remainder = clean(title).replace(/^\s*(?:new|used|certified|cpo)?\s*20\d{2}\s*/i, "");
+  if (requestedMake) remainder = remainder.replace(new RegExp(`^${requestedMake.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+`, "i"), "");
+  let model = requestedModel || null;
+  let trim = null;
+  if (requestedModel) {
+    const index = remainder.toLowerCase().indexOf(requestedModel.toLowerCase());
+    if (index >= 0) trim = clean(remainder.slice(index + requestedModel.length)) || null;
+  } else {
+    const words = remainder.split(/\s+/);
+    model = words.shift() || null;
+    trim = clean(words.join(" ")) || null;
+  }
+  return { year:Number(yearMatch?.[1]) || null, make:requestedMake || null, model, trim };
+};
+
+export function extractLlmVehicles(html, dealer, query, checkedAt = new Date().toISOString()) {
+  if (!/\bVIN\s*:/i.test(html) || !/\b(?:New|Used|Certified)\b/i.test(html)) return [];
+  const lines = htmlToLines(html);
+  const pattern = /(?:^|\n)(20\d{2}\s+[^\n]{2,100})\n(New|Used|Certified(?: Pre-Owned)?)\n(?:[\d,]+\s+miles\n)?(?:Call for Price|\$([\d,]+))\nVIN:\s*([A-HJ-NPR-Z0-9]{17})/gi;
+  const vehicles = [];
+  for (const match of lines.matchAll(pattern)) {
+    const name = clean(match[1]);
+    const parsed = titleParts(name, query);
+    const vehicle = {
+      name, ...parsed,
+      condition:/used/i.test(match[2]) ? "Used" : /certified/i.test(match[2]) ? "CPO" : "New",
+      bodyStyle:null,
+      powertrain:powertrainDescription({ name }),
+      transmission:null,
+      drivetrain:(name.match(/\b(?:AWD|FWD|RWD|4WD|4X4)\b/i)?.[0] || null),
+      exteriorColor:null, interiorColor:null,
+      vin:match[4].toUpperCase(), stockNumber:null,
+      price:price(match[3]), msrp:null, mileage:0,
+      status:"In Stock", features:[], imageUrl:null,
+      url:null, checkedAt, dealer,
+    };
+    if (vehicle.make && vehicle.model) vehicles.push(vehicle);
+  }
+  return vehicles;
+}
+
+const firstValue = (object, names) => {
+  for (const name of names) {
+    const value = object?.[name];
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return null;
+};
+
+const collectInventoryObjects = (node, output, seen = new Set()) => {
+  if (!node || typeof node !== "object" || seen.has(node)) return;
+  seen.add(node);
+  if (Array.isArray(node)) return node.forEach((item) => collectInventoryObjects(item, output, seen));
+  const vin = clean(firstValue(node, ["vin", "VIN", "vehicleIdentificationNumber"]));
+  const model = firstValue(node, ["model", "modelName", "vehicleModel"]);
+  const make = firstValue(node, ["make", "makeName", "brand", "manufacturer"]);
+  if (/^[A-HJ-NPR-Z0-9]{17}$/i.test(vin) && (model || firstValue(node, ["title", "name"])) && make) output.push(node);
+  Object.values(node).forEach((child) => collectInventoryObjects(child, output, seen));
+};
+
+export function extractEmbeddedVehicles(html, dealer, checkedAt = new Date().toISOString()) {
+  const objects = [];
+  for (const match of html.matchAll(/<script[^>]*type=["']application\/(?:ld\+)?json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try { collectInventoryObjects(JSON.parse(decodeHtml(match[1])), objects); } catch { /* malformed JSON */ }
+  }
+  const seen = new Set();
+  return objects.map((item) => {
+    const makeValue = firstValue(item, ["make", "makeName", "brand", "manufacturer"]);
+    const engine = firstValue(item, ["fuelType", "fuel", "engine", "engineDescription"]);
+    const name = clean(firstValue(item, ["title", "name", "displayName"]));
+    const vin = clean(firstValue(item, ["vin", "VIN", "vehicleIdentificationNumber"])).toUpperCase();
+    return {
+      name:name || null,
+      year:Number(firstValue(item, ["year", "modelYear", "vehicleModelDate"])) || null,
+      make:clean(text(makeValue)) || null,
+      model:clean(firstValue(item, ["model", "modelName", "vehicleModel"])) || null,
+      trim:clean(firstValue(item, ["trim", "trimName", "vehicleConfiguration"])) || null,
+      condition:/used|pre-owned/i.test(clean(firstValue(item, ["condition", "type", "inventoryType"]))) ? "Used" : "New",
+      bodyStyle:clean(firstValue(item, ["bodyStyle", "bodyType"])) || null,
+      powertrain:powertrainDescription({ fuelType:engine, name }),
+      transmission:clean(firstValue(item, ["transmission", "transmissionDescription"])) || null,
+      drivetrain:clean(firstValue(item, ["drivetrain", "driveTrain", "driveWheelConfiguration"])) || null,
+      exteriorColor:clean(firstValue(item, ["exteriorColor", "color"])) || null,
+      interiorColor:clean(firstValue(item, ["interiorColor"])) || null,
+      vin,
+      stockNumber:clean(firstValue(item, ["stockNumber", "stock", "stockNo"])) || null,
+      price:price(firstValue(item, ["price", "internetPrice", "salePrice", "sellingPrice"])),
+      msrp:price(firstValue(item, ["msrp", "retailPrice"])),
+      mileage:price(firstValue(item, ["mileage", "odometer"])),
+      status:"In Stock", features:[],
+      imageUrl:safeUrl(firstValue(item, ["imageUrl", "image", "photo"]), dealer.website),
+      url:safeUrl(firstValue(item, ["url", "vehicleUrl", "detailUrl"]), dealer.website),
+      checkedAt, dealer,
+    };
+  }).filter((vehicle) => {
+    if (!vehicle.make || !vehicle.model || seen.has(vehicle.vin)) return false;
+    seen.add(vehicle.vin); return true;
+  });
+}
 const comparableHostname = (value) => value.toLowerCase().replace(/^www\./, "");
+const dealerHeaders = () => ({
+  accept:"text/html,application/xhtml+xml",
+  "accept-language":"en-US,en;q=0.8",
+  "user-agent":"Mozilla/5.0 (compatible; DJIGITInventory/1.0; +https://djigit.us)",
+});
+
+const dealerOnModel = (html) => {
+  const match = html.match(/<script[^>]*id=["']dlron-srp-model["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!match) return null;
+  try {
+    const model = JSON.parse(decodeHtml(match[1]));
+    const dealerId = Number(model.DealerId);
+    const pageId = Number(model.PageId);
+    return dealerId > 0 && pageId > 0 ? { dealerId, pageId } : null;
+  } catch {
+    return null;
+  }
+};
+
+export function extractDealerOnVehicles(payload, dealer, checkedAt = new Date().toISOString()) {
+  const cards = Array.isArray(payload?.DisplayCards) ? payload.DisplayCards : [];
+  const seen = new Set();
+  return cards.map((entry) => {
+    const item = entry?.VehicleCard;
+    if (!item) return null;
+    const vin = clean(item.VehicleVin).toUpperCase();
+    const name = clean(item.VehicleName);
+    const status = clean(entry?.VehicleStatusModel?.StatusText) ||
+      (item.VehicleInTransit ? "In Transit" : item.VehicleInStock ? "In Stock" : null);
+    const image = item.VehicleImageModel?.VehiclePhotoSrc ??
+      item.VehicleImageModel?.VehiclePhotoCarouselList?.[0]?.VehiclePhotoSrc;
+    return {
+      name:name || null,
+      year:Number(item.VehicleYear) || null,
+      make:clean(item.VehicleMake) || null,
+      model:clean(item.VehicleModel) || null,
+      trim:clean(item.VehicleRuleAdjustedTrim ?? item.VehicleTrim) || null,
+      condition:/used|pre-owned/i.test(clean(item.VehicleType)) ? "Used" :
+        /certified|cpo/i.test(clean(item.VehicleType)) ? "CPO" : "New",
+      bodyStyle:clean(item.VehicleBodyStyle ?? item.VehicleBodyType) || null,
+      powertrain:powertrainDescription({
+        fuelType:item.VehicleFuelType,
+        vehicleEngine:item.VehicleEngine,
+        name,
+      }),
+      transmission:clean(item.VehicleTransmission) || null,
+      drivetrain:clean(item.VehicleDriveTrain) || null,
+      exteriorColor:clean(item.ExteriorColorLabel ?? item.VehicleExteriorColor) || null,
+      interiorColor:clean(item.InteriorColorLabel ?? item.VehicleInteriorColor) || null,
+      vin:vin || null,
+      stockNumber:clean(item.VehicleStockNumber) || null,
+      price:price(item.VehicleInternetPrice ?? item.TaggingPrice),
+      msrp:price(item.VehicleMsrp),
+      mileage:price(item.VehicleMileage),
+      status, features:[],
+      imageUrl:safeUrl(image, dealer.website),
+      url:safeUrl(item.VehicleDetailUrl, dealer.website),
+      checkedAt, dealer,
+    };
+  }).filter((vehicle) => {
+    if (!vehicle?.make || !vehicle.model) return false;
+    const identity = vehicle.vin || `${vehicle.stockNumber || ""}|${vehicle.url || ""}`;
+    if (!identity || seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+}
+
+const fetchDealerOnVehicles = async (html, finalUrl, dealer, query, signal) => {
+  const model = dealerOnModel(html);
+  if (!model) return null;
+  const endpoint = new URL(
+    `/api/vhcliaa/vehicle-pages/cosmos/srp/vehicles/${model.dealerId}/${model.pageId}`,
+    finalUrl.origin,
+  );
+  endpoint.searchParams.set("host", finalUrl.hostname);
+  endpoint.searchParams.set("pageSize", "24");
+  endpoint.searchParams.set("displayCardsShown", "0");
+  const requestedModel = clean(query?.filters?.model?.value);
+  if (requestedModel) endpoint.searchParams.set("q", requestedModel);
+  const response = await fetch(endpoint, {
+    signal, redirect:"follow", headers:{ ...dealerHeaders(), accept:"application/json" },
+    cf:{ cacheTtl:300, cacheEverything:true },
+  });
+  const responseUrl = validateDealerUrl(response.url || endpoint.href);
+  if (comparableHostname(responseUrl.hostname) !== comparableHostname(finalUrl.hostname)) {
+    throw new Error("UNSAFE_REDIRECT");
+  }
+  if (!response.ok) throw new Error(`DEALERON_HTTP_${response.status}`);
+  return extractDealerOnVehicles(await response.json(), dealer);
+};
 
 export function extractVehicleLinks(html, baseUrl, model = "", limit = 8) {
   const base = validateDealerUrl(baseUrl);
@@ -266,16 +483,13 @@ export async function searchDealer(dealer, query) {
     }
     let lastError = null;
     let reachedDealer = false;
+    const diagnostics = [];
     for (const candidate of inventoryCandidates(dealerUrl, query)) {
       try {
         const response = await fetch(candidate, {
           signal: controller.signal,
           redirect: "follow",
-          headers: {
-            accept: "text/html,application/xhtml+xml",
-            "accept-language": "en-US,en;q=0.8",
-            "user-agent": "Mozilla/5.0 (compatible; DJIGITInventory/1.0; +https://djigit.us)",
-          },
+          headers:dealerHeaders(),
           cf: { cacheTtl: 300, cacheEverything: true },
         });
         const finalUrl = validateDealerUrl(response.url || candidate.href);
@@ -290,7 +504,19 @@ export async function searchDealer(dealer, query) {
         const contentLength = Number(response.headers.get("content-length") ?? 0);
         if (contentLength > 2_000_000) throw new Error("DEALER_RESPONSE_TOO_LARGE");
         const html = await response.text();
-        let vehicles = extractVehicles(html, dealer);
+        let vehicles = await fetchDealerOnVehicles(
+          html, finalUrl, dealer, query, controller.signal,
+        );
+        if (!vehicles) vehicles = extractVehicles(html, dealer);
+        if (!vehicles.length) vehicles = extractEmbeddedVehicles(html, dealer);
+        if (!vehicles.length && finalUrl.pathname.startsWith("/llm/inventory")) {
+          vehicles = extractLlmVehicles(html, dealer, query);
+        }
+        if (query?.debug) diagnostics.push({
+          candidate:candidate.href, final:finalUrl.href, status:response.status,
+          bytes:html.length, hasVin:/\bVIN\s*:/i.test(html),
+          hasJson:/application\/(?:ld\+)?json/i.test(html), vehicles:vehicles.length,
+        });
         if (!vehicles.length) {
           const detailLinks = extractVehicleLinks(
             html,
@@ -303,11 +529,7 @@ export async function searchDealer(dealer, query) {
               const detailResponse = await fetch(href, {
                 signal: controller.signal,
                 redirect: "follow",
-                headers: {
-                  accept: "text/html,application/xhtml+xml",
-                  "accept-language": "en-US,en;q=0.8",
-                  "user-agent": "Mozilla/5.0 (compatible; DJIGITInventory/1.0; +https://djigit.us)",
-                },
+                headers:dealerHeaders(),
                 cf: { cacheTtl: 300, cacheEverything: true },
               });
               const detailUrl = validateDealerUrl(detailResponse.url || href);
@@ -339,11 +561,7 @@ export async function searchDealer(dealer, query) {
             const detailResponse = await fetch(detailUrl, {
               signal: controller.signal,
               redirect: "follow",
-              headers: {
-                accept: "text/html,application/xhtml+xml",
-                "accept-language": "en-US,en;q=0.8",
-                "user-agent": "Mozilla/5.0 (compatible; DJIGITInventory/1.0; +https://djigit.us)",
-              },
+              headers:dealerHeaders(),
               cf: { cacheTtl: 300, cacheEverything: true },
             });
             const finalDetailUrl = validateDealerUrl(detailResponse.url || detailUrl.href);
@@ -365,14 +583,18 @@ export async function searchDealer(dealer, query) {
           } catch { /* keep the inventory-page data when a detail page is unavailable */ }
         }));
         const ranked = rank(vehicles, query.filters, query.allowRequiredViolations);
-        return { exact: ranked.filter((item) => item.exact), close: ranked.filter((item) => !item.exact) };
+        return { exact: ranked.filter((item) => item.exact), close: ranked.filter((item) => !item.exact), diagnostics };
       } catch (error) {
         if (error?.name === "AbortError") throw error;
+        if (query?.debug) diagnostics.push({ candidate:candidate.href, error:String(error?.message || error) });
         lastError = error;
       }
     }
-    if (!reachedDealer && lastError) throw lastError;
-    return { exact: [], close: [] };
+    if (!reachedDealer && lastError) {
+      if (query?.debug) lastError.diagnostics = diagnostics;
+      throw lastError;
+    }
+    return { exact: [], close: [], diagnostics };
   } finally {
     clearTimeout(timer);
   }

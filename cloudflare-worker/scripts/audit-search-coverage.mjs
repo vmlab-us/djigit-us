@@ -36,9 +36,11 @@ async function worker() {
           model:{ value:model, required:true },
         },
         allowRequiredViolations:false,
+        debug:true,
       });
       output[index] = {
         ...record, model, exact:result.exact.length, close:result.close.length,
+        diagnostics:result.diagnostics,
         searchStatus:result.exact.length ? "SEARCH_OK" : "NO_MATCHES",
         elapsedMs:Date.now() - started,
       };
@@ -47,6 +49,7 @@ async function worker() {
         ...record, model, exact:0, close:0,
         searchStatus:error?.name === "AbortError" ? "SEARCH_TIMEOUT" : "SEARCH_ERROR",
         searchError:String(error?.message || error).slice(0, 100),
+        diagnostics:error?.diagnostics,
         elapsedMs:Date.now() - started,
       };
     }

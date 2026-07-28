@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  extractVehicleLinks, extractVehicles, inventoryCandidates, rank, validateDealerUrl,
+  extractDealerOnVehicles, extractEmbeddedVehicles, extractLlmVehicles, extractVehicleLinks, extractVehicles,
+  inventoryCandidates, rank, validateDealerUrl,
 } from "../src/inventory.js";
 
 const dealer = { id:"d1", name:"Dealer", website:"https://dealer.example", fleet:null };
@@ -81,12 +82,52 @@ describe("Worker inventory", () => {
     const urls = inventoryCandidates(new URL("https://www.dealer.example/"), {
       filters: { make:{ value:"Subaru" }, model:{ value:"WRX" } },
     }).map((url) => url.href);
-    expect(urls[0]).toBe("https://www.dealer.example/new-subaru/wrx.htm");
+    expect(urls[0]).toBe("https://www.dealer.example/llm/inventory/?type=new");
+    expect(urls).toContain("https://www.dealer.example/new-subaru/wrx.htm");
     expect(urls).toContain("https://www.dealer.example/new-inventory/index.htm");
     expect(urls).toContain("https://www.dealer.example/search/new/");
     expect(urls).toContain("https://www.dealer.example/sitemap.xml");
     expect(urls.at(-1)).toBe("https://www.dealer.example/");
     expect(new Set(urls).size).toBe(urls.length);
+  });
+  it("extracts the standardized dealer LLM inventory format", () => {
+    const html = `<h1>New Vehicle Inventory</h1><ul><li><a href="/vehicle/1GNS5CKD6TR383056">
+      2026 Chevrolet Suburban LT</a><p>New</p><p>0 miles</p><p>$76,830</p>
+      <p>VIN: 1GNS5CKD6TR383056</p></li></ul>`;
+    expect(extractLlmVehicles(html, {...dealer,brand:"Chevrolet"}, { filters:{
+      make:{value:"Chevrolet"}, model:{value:"Suburban"},
+    }})).toEqual([expect.objectContaining({
+      year:2026, make:"Chevrolet", model:"Suburban", trim:"LT",
+      vin:"1GNS5CKD6TR383056", price:76830, condition:"New",
+    })]);
+  });
+  it("extracts inventory objects from Next-style JSON payloads", () => {
+    const html = `<script type="application/json">${JSON.stringify({props:{vehicles:[{
+      vin:"5XYK23DF0TG439927",year:2026,make:"Kia",model:"Sportage",trim:"LX",
+      price:30485,fuelType:"Gasoline",driveTrain:"FWD",stockNumber:"2N20323",
+    }]}})}</script>`;
+    expect(extractEmbeddedVehicles(html, dealer)).toEqual([expect.objectContaining({
+      make:"Kia",model:"Sportage",trim:"LX",vin:"5XYK23DF0TG439927",
+      price:30485,powertrain:"Gasoline",drivetrain:"FWD",stockNumber:"2N20323",
+    })]);
+  });
+  it("normalizes DealerOn API vehicle cards", () => {
+    const payload = {DisplayCards:[{VehicleCard:{
+      VehicleName:"2026 Chevrolet Suburban 2WD Premier", VehicleYear:2026,
+      VehicleMake:"Chevrolet", VehicleModel:"Suburban", VehicleTrim:"Premier",
+      VehicleFuelType:"Gasoline", VehicleDriveTrain:"RWD",
+      VehicleVin:"1GNS5EK84TR291376", VehicleStockNumber:"CD-009",
+      VehicleInternetPrice:"80120", VehicleMsrp:"82000",
+      ExteriorColorLabel:"Black", VehicleDetailUrl:"/vehicle/1GNS5EK84TR291376",
+      VehicleInStock:true,
+    },VehicleStatusModel:{StatusText:"In Stock"}}]};
+    expect(extractDealerOnVehicles(payload, dealer)).toEqual([expect.objectContaining({
+      name:"2026 Chevrolet Suburban 2WD Premier", year:2026,
+      make:"Chevrolet", model:"Suburban", trim:"Premier",
+      powertrain:"Gasoline", drivetrain:"RWD", price:80120, msrp:82000,
+      vin:"1GNS5EK84TR291376", stockNumber:"CD-009", status:"In Stock",
+      url:"https://dealer.example/vehicle/1GNS5EK84TR291376",
+    })]);
   });
   it("discovers same-host vehicle detail links from inventory HTML and sitemaps", () => {
     const html = `
