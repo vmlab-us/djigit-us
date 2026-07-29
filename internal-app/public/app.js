@@ -370,7 +370,13 @@ function contactActions(vehicle) {
   const officePhone = officeDigits.length === 10 ? `+1${officeDigits}` :
     officeDigits.length === 11 && officeDigits.startsWith("1") ? `+${officeDigits}` : "";
   const subject = `Availability request — ${[vehicle.year, vehicle.make, vehicle.model, vehicle.stockNumber && `Stock ${vehicle.stockNumber}`].filter(Boolean).join(" ")}`;
-  const emailHref = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(inquiryMessage(vehicle))}`;
+  const emailBody = inquiryMessage(vehicle);
+  const mobileMail = /Android|iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+    (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const emailHref = mobileMail
+    ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`
+    : `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+  const emailTarget = mobileMail ? "" : ` target="_blank" rel="noopener noreferrer"`;
   const smsSeparator = /iPad|iPhone|iPod/.test(navigator.userAgent) ? "&" : "?";
   const smsHref = phone ? `sms:${phone}${smsSeparator}body=${encodeURIComponent(inquiryMessage(vehicle, true))}` : "";
   const callHref = officePhone ? `tel:${officePhone}` : "";
@@ -379,7 +385,7 @@ function contactActions(vehicle) {
     `<span class="contact-note">Контактные данные не указаны — используйте Copy request.</span>` : "";
   return `<div class="contact-actions">
     <button type="button" class="contact-button copy-request" data-copy="${copyText}">Copy request</button>
-    ${email ? `<a class="contact-button" href="${escapeHtml(emailHref)}">Email</a>` : ""}
+    ${email ? `<a class="contact-button" href="${escapeHtml(emailHref)}"${emailTarget}>Email</a>` : ""}
     ${smsHref ? `<a class="contact-button secondary-contact" href="${escapeHtml(smsHref)}">Text message</a>` : ""}
     ${callHref ? `<a class="contact-button call-contact" href="${escapeHtml(callHref)}">Call office</a>` : ""}
     ${unavailable}
