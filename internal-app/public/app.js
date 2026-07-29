@@ -341,7 +341,7 @@ function contact(dealer) {
 }
 function dealerBlock(dealer) {
   return `<div class="dealer-block">
-    <div class="dealer-heading"><span>${escapeHtml(dealer.name)}</span>${dealer.distanceMiles == null ? "" : `<span class="dealer-distance">${dealer.distanceMiles} mi</span>`}</div>
+    <div class="dealer-heading"><span>${escapeHtml(dealer.name)}</span>${dealer.distanceMiles == null ? "" : `<span class="dealer-distance" title="Расстояние по автомобильному маршруту без учёта пробок">${dealer.distanceMiles} mi</span>`}</div>
     <div class="dealer-contact">${contact(dealer)}</div>
   </div>`;
 }
