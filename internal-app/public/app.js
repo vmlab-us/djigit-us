@@ -90,15 +90,18 @@ $("searchForm").addEventListener("submit", async (event) => {
   applyFreeText();
   const filters = {
     make: preference("make", true), model: preference("model", true),
-    condition: preference("condition", true), status: preference("availability", true),
+    condition: { value:"New", required:true }, status: preference("availability", true),
     trim: preference("trim", true), drivetrain: preference("drivetrain", true),
     powertrain: preference("powertrain", true), priceMax: preference("priceMax", true),
     exteriorColor: preference("exteriorColor", true),
   };
   Object.keys(filters).forEach((key) => filters[key] === undefined && delete filters[key]);
   if (!filters.make || !filters.model) return showMessage("Укажите марку и модель в строке запроса или фильтрах.");
+  const distanceValue = $("distance").value.trim();
+  const maxDistance = distanceValue && Number(distanceValue) >= 1 ? Number(distanceValue) : undefined;
   const matchingDealers = directory.filter((dealer) =>
-    dealer.website && dealer.brand?.toLowerCase().includes(filters.make.value.toLowerCase()));
+    dealer.website && dealer.brand?.toLowerCase().includes(filters.make.value.toLowerCase()) &&
+    (maxDistance === undefined || (dealer.distanceMiles !== null && dealer.distanceMiles <= maxDistance)));
   const selectedByName = new Map();
   for (const dealer of matchingDealers) {
     const key = `${String(dealer.brand).trim().toLowerCase()}|${String(dealer.name).trim().toLowerCase()}`;
@@ -435,6 +438,8 @@ function applyFreeText() {
     $("availability").value = /stock/.test(availability) ? "In Stock" :
       /transit/.test(availability) ? "In Transit" : /incoming/.test(availability) ? "Incoming" : "On Order";
   }
+  const color = text.match(/\b(black|white|gr[ae]y|silver|blue|red|green|brown|beige|gold|bronze|yellow|orange|purple|burgundy|turquoise)\b/i)?.[1]?.toLowerCase();
+  if (color) setSelectValue("exteriorColor", color === "grey" ? "Gray" : color);
 }
 function dedupeAndSort(search) {
   const seen=new Set();

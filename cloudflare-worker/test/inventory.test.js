@@ -76,6 +76,17 @@ describe("Worker inventory", () => {
     };
     expect(rank(vehicles, filters).map((item) => item.vehicle.name)).toEqual(["RAV4 Hybrid"]);
   });
+  it("matches manufacturer paint names to the selected base color", () => {
+    const vehicles = [
+      { name:"Sportage", make:"Kia", model:"Sportage", exteriorColor:"Wolf Gray", dealer },
+      { name:"Sportage", make:"Kia", model:"Sportage", exteriorColor:"Glacial White Pearl", dealer },
+    ];
+    const filters = {
+      make:{value:"Kia",required:true}, model:{value:"Sportage",required:true},
+      exteriorColor:{value:"Gray",required:true},
+    };
+    expect(rank(vehicles, filters).map((item) => item.vehicle.exteriorColor)).toEqual(["Wolf Gray"]);
+  });
   it("rejects a conflicting vehicle title even when a bad model field says GLB", () => {
     const base = {
       make:"Mercedes-Benz", model:"GLB-Class", year:2027, price:52655,

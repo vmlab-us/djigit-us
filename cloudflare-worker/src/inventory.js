@@ -542,6 +542,26 @@ const categorical = (field, value) => {
     if (/incoming/.test(normalized)) return "incoming";
     if (/on.?order|factory order|pre.?order/.test(normalized)) return "on order";
   }
+  if (field === "exteriorColor") {
+    if (/two.?tone|bi.?color/.test(normalized)) return "two-tone";
+    if (/burgundy|maroon|wine/.test(normalized)) return "burgundy";
+    if (/turquoise|teal|aqua/.test(normalized)) return "turquoise";
+    if (/bronze|copper/.test(normalized)) return "bronze";
+    if (/beige|tan|khaki|ivory|cream/.test(normalized)) return "beige";
+    if (/black/.test(normalized)) return "black";
+    if (/white/.test(normalized)) return "white";
+    if (/gray|grey|graphite|charcoal/.test(normalized)) return "gray";
+    if (/silver/.test(normalized)) return "silver";
+    if (/blue|navy/.test(normalized)) return "blue";
+    if (/red/.test(normalized)) return "red";
+    if (/green/.test(normalized)) return "green";
+    if (/brown|chestnut/.test(normalized)) return "brown";
+    if (/gold|champagne/.test(normalized)) return "gold";
+    if (/yellow/.test(normalized)) return "yellow";
+    if (/orange/.test(normalized)) return "orange";
+    if (/purple|violet/.test(normalized)) return "purple";
+    return "other";
+  }
   return normalized;
 };
 const matches = (field, value, expected) => {
@@ -553,7 +573,7 @@ const matches = (field, value, expected) => {
     return containsTokenSequence(actualModel, expectedModel) ||
       containsTokenSequence(expectedModel, actualModel);
   }
-  if (["condition", "trim", "drivetrain", "powertrain", "status"].includes(field)) {
+  if (["condition", "trim", "drivetrain", "powertrain", "status", "exteriorColor"].includes(field)) {
     return categorical(field, value) === categorical(field, expected);
   }
   return key(value).includes(key(expected));
