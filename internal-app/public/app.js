@@ -255,7 +255,7 @@ function manualCheckCard(item) {
         ${fleetMobilePhone(item.dealer) ? `<span class="badge fleet-badge">Fleet mobile</span>` : `<span class="badge fleet-badge">Fleet contact</span>`}
         <h3>${escapeHtml(vehicle.name)}</h3>
         <p class="failure-reason">${escapeHtml(item.reason)}</p>
-        <p><strong>${escapeHtml(item.dealerName)}</strong>${item.dealer.distanceMiles == null ? "" : ` · ${item.dealer.distanceMiles} mi`}<br>${contact(item.dealer)}</p>
+        ${dealerBlock(item.dealer)}
         ${website !== "#" ? `<a href="${website}" target="_blank" rel="noopener noreferrer">Открыть сайт вручную</a>` : ""}
         ${contactActions(vehicle)}
       </div>
@@ -306,7 +306,7 @@ function card(item) {
       <span>Двигатель: ${escapeHtml(v.powertrain || "Не указан")}</span>
       <span>Trim: ${escapeHtml(v.trim || "Не указан")}</span>
     </div>
-    <p><strong>${escapeHtml(d.name)}</strong>${d.distanceMiles == null ? "" : ` · ${d.distanceMiles} mi`}<br>${contact(d)}</p>
+    ${dealerBlock(d)}
     ${v.url ? `<a href="${safeUrl(v.url)}" target="_blank" rel="noopener noreferrer">Открыть автомобиль у дилера</a>` : ""}
     ${contactActions(v)}
     <p class="muted">Проверено ${new Date(v.checkedAt).toLocaleString()}. Опубликованная цена требует подтверждения у дилера.</p></article>`;
@@ -338,6 +338,12 @@ function contact(dealer) {
   const first = dealerContact(dealer);
   if (first.name || first.email || first.fleetPhone) return `Fleet: ${escapeHtml(first.name || "контакт")} · ${escapeHtml(first.fleetPhone || first.email || "данные не указаны")}`;
   return `Публичный fleet-контакт не найден · ${escapeHtml(dealer.phone || "общий телефон не указан")}`;
+}
+function dealerBlock(dealer) {
+  return `<div class="dealer-block">
+    <div class="dealer-heading"><span>${escapeHtml(dealer.name)}</span>${dealer.distanceMiles == null ? "" : `<span class="dealer-distance">${dealer.distanceMiles} mi</span>`}</div>
+    <div class="dealer-contact">${contact(dealer)}</div>
+  </div>`;
 }
 function vehicleSummary(vehicle) {
   const amount = vehicle.price ?? vehicle.msrp;
