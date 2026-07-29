@@ -137,6 +137,7 @@ export default {
         error?.message === "SHEETS_READ_FAILED" ? "Не удалось прочитать справочник дилеров." :
         error?.name === "AbortError" ? "Сайт дилера не ответил вовремя." :
         error?.message === "BLOCKED_OR_CAPTCHA" ? "Сайт заблокирован или требует CAPTCHA." :
+        error?.message === "INVENTORY_NOT_READABLE" ? "Инвентарь сайта не удалось прочитать автоматически." :
         "Не удалось проверить дилера.";
       return json({ error: message }, 503);
     }

@@ -521,6 +521,29 @@ const containsTokenSequence = (tokens, expected) => {
   return tokens.some((_, index) =>
     expected.every((token, offset) => tokens[index + offset] === token));
 };
+const categorical = (field, value) => {
+  const normalized = key(value);
+  if (field === "powertrain") {
+    if (/plug.?in|phev/.test(normalized)) return "plug-in hybrid";
+    if (/\bhybrid\b|\bhev\b/.test(normalized)) return "hybrid";
+    if (/electric|\bev\b/.test(normalized)) return "electric";
+    if (/diesel/.test(normalized)) return "diesel";
+    if (/gasoline|gas fuel|petrol/.test(normalized)) return "gasoline";
+  }
+  if (field === "drivetrain") {
+    if (/all.?wheel|\bawd\b/.test(normalized)) return "awd";
+    if (/front.?wheel|\bfwd\b/.test(normalized)) return "fwd";
+    if (/rear.?wheel|\brwd\b/.test(normalized)) return "rwd";
+    if (/four.?wheel|\b4wd\b|\b4x4\b/.test(normalized)) return "4wd";
+  }
+  if (field === "status") {
+    if (/in.?stock|dealer stock|available now/.test(normalized)) return "in stock";
+    if (/in.?transit|en route|in route/.test(normalized)) return "in transit";
+    if (/incoming/.test(normalized)) return "incoming";
+    if (/on.?order|factory order|pre.?order/.test(normalized)) return "on order";
+  }
+  return normalized;
+};
 const matches = (field, value, expected) => {
   if (field === "yearMin") return value >= expected;
   if (field === "yearMax" || field === "priceMax" || field === "mileageMax") return value <= expected;
@@ -529,6 +552,9 @@ const matches = (field, value, expected) => {
     const expectedModel = modelTokens(expected);
     return containsTokenSequence(actualModel, expectedModel) ||
       containsTokenSequence(expectedModel, actualModel);
+  }
+  if (["condition", "trim", "drivetrain", "powertrain", "status"].includes(field)) {
+    return categorical(field, value) === categorical(field, expected);
   }
   return key(value).includes(key(expected));
 };
@@ -734,11 +760,17 @@ export async function searchDealer(dealer, query) {
         lastError = error;
       }
     }
+    if (lastError?.message === "BLOCKED_OR_CAPTCHA") {
+      if (query?.debug) lastError.diagnostics = diagnostics;
+      throw lastError;
+    }
     if (!reachedDealer && lastError) {
       if (query?.debug) lastError.diagnostics = diagnostics;
       throw lastError;
     }
-    return { exact: [], close: [], diagnostics };
+    const unreadable = new Error("INVENTORY_NOT_READABLE");
+    if (query?.debug) unreadable.diagnostics = diagnostics;
+    throw unreadable;
   } finally {
     clearTimeout(timer);
   }

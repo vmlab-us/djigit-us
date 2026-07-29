@@ -90,19 +90,15 @@ $("searchForm").addEventListener("submit", async (event) => {
   applyFreeText();
   const filters = {
     make: preference("make", true), model: preference("model", true),
-    condition: preference("condition", true), trim: preference("trim"),
-    drivetrain: preference("drivetrain"), powertrain: preference("powertrain"),
-    yearMin: preference("yearMin"), yearMax: preference("yearMax"),
-    priceMax: preference("priceMax"), mileageMax: preference("mileageMax"),
-    exteriorColor: preference("exteriorColor"),
+    condition: preference("condition", true), status: preference("availability", true),
+    trim: preference("trim", true), drivetrain: preference("drivetrain", true),
+    powertrain: preference("powertrain", true), priceMax: preference("priceMax", true),
+    exteriorColor: preference("exteriorColor", true),
   };
   Object.keys(filters).forEach((key) => filters[key] === undefined && delete filters[key]);
   if (!filters.make || !filters.model) return showMessage("Укажите марку и модель в строке запроса или фильтрах.");
-  const distanceValue = $("distance").value.trim();
-  const maxDistance = distanceValue && Number(distanceValue) >= 1 ? Number(distanceValue) : undefined;
   const matchingDealers = directory.filter((dealer) =>
-    dealer.website && dealer.brand?.toLowerCase().includes(filters.make.value.toLowerCase()) &&
-    (maxDistance === undefined || dealer.distanceMiles === null || dealer.distanceMiles <= maxDistance));
+    dealer.website && dealer.brand?.toLowerCase().includes(filters.make.value.toLowerCase()));
   const selectedByName = new Map();
   for (const dealer of matchingDealers) {
     const key = `${String(dealer.brand).trim().toLowerCase()}|${String(dealer.name).trim().toLowerCase()}`;
@@ -113,10 +109,11 @@ $("searchForm").addEventListener("submit", async (event) => {
   $("directoryStatus").textContent =
     `Ищем: ${filters.make.value} ${filters.model.value}` +
     `${filters.powertrain?.value ? ` · ${filters.powertrain.value}` : ""}` +
+    `${filters.status?.value ? ` · ${filters.status.value}` : ""}` +
     ` · подходящих дилеров: ${selected.length}`;
   try {
     searchController = new AbortController();
-    activeSearch = { status:"running",selected:selected.length,checked:0,failed:[],exact:[],close:[] };
+    activeSearch = { status:"running",selected:selected.length,checked:0,failed:[],exact:[],close:[],query:{ freeText:$("freeText").value,filters } };
     $("progress").hidden = false; $("cancel").hidden = false; renderProgress(activeSearch);
     const hardTimer = setTimeout(() => searchController.abort(), 120000);
     await runQueue(selected, { freeText:$("freeText").value,filters }, searchController.signal);
@@ -144,7 +141,13 @@ async function runQueue(dealers, query, signal) {
         activeSearch.exact.push(...result.exact);
         activeSearch.close.push(...result.close);
       } catch (error) {
-        activeSearch.failed.push({dealerName:dealer.name,reason:signal.aborted ? "Поиск остановлен" : error.message});
+        activeSearch.failed.push({
+          dealerName: dealer.name,
+          website: dealer.website,
+          dealer,
+          query,
+          reason: signal.aborted ? "Поиск остановлен" : error.message,
+        });
       } finally {
         activeSearch.checked += 1; renderProgress(activeSearch);
       }
@@ -181,7 +184,11 @@ function finish(search) {
   $("resultCount").textContent = `Найдено: ${search.exact.length + search.close.length}`;
   renderGroup("exact", "Точные совпадения", search.exact);
   renderGroup("close", "Близкие варианты", search.close);
-  $("failed").innerHTML = search.failed.length ? `<details class="panel"><summary>Не удалось проверить (${search.failed.length})</summary><ul>${search.failed.map((x) => `<li>${escapeHtml(x.dealerName)} — ${escapeHtml(x.reason)}</li>`).join("")}</ul></details>` : "";
+  $("failed").innerHTML = search.failed.length ? `<section class="manual-check panel">
+    <h2>Проверить вручную (${search.failed.length})</h2>
+    <p class="muted">Эти сайты не удалось проверить автоматически. Откройте их вручную и выполните тот же поиск на сайте дилера.</p>
+    <div class="manual-check-list">${search.failed.map(manualCheckCard).join("")}</div>
+  </section>` : "";
   if (!search.exact.length && !search.close.length) showMessage(search.selected ? "Совпадений не найдено." : "Для этой марки нет дилеров с корректным HTTPS-сайтом в справочнике.");
 }
 
@@ -232,6 +239,52 @@ $("sortOrder").addEventListener("change", () => {
 
 function renderGroup(id, title, items) {
   $(id).innerHTML = items.length ? `<section class="group"><h2>${title} (${items.length})</h2><div class="cards">${items.map(card).join("")}</div></section>` : "";
+}
+
+function manualCheckCard(item) {
+  const website = safeUrl(item.website);
+  const hasFleetContact = fleetPriority(item.dealer) > 0;
+  const vehicle = unverifiedVehicle(item.dealer, item.query);
+  if (hasFleetContact) {
+    return `<article class="manual-check-card manual-contact-card">
+      <div class="manual-contact-main">
+        <span class="badge unavailable-badge">Сайт не удалось прочитать</span>
+        ${fleetMobilePhone(item.dealer) ? `<span class="badge fleet-badge">Fleet mobile</span>` : `<span class="badge fleet-badge">Fleet contact</span>`}
+        <h3>${escapeHtml(vehicle.name)}</h3>
+        <p class="failure-reason">${escapeHtml(item.reason)}</p>
+        <p><strong>${escapeHtml(item.dealerName)}</strong>${item.dealer.distanceMiles == null ? "" : ` · ${item.dealer.distanceMiles} mi`}<br>${contact(item.dealer)}</p>
+        ${website !== "#" ? `<a href="${website}" target="_blank" rel="noopener noreferrer">Открыть сайт вручную</a>` : ""}
+        ${contactActions(vehicle)}
+      </div>
+    </article>`;
+  }
+  return `<article class="manual-check-card">
+    <div><strong>${escapeHtml(item.dealerName)}</strong><span>${escapeHtml(item.reason)}</span></div>
+    ${website !== "#" ? `<a class="manual-check-link" href="${website}" target="_blank" rel="noopener noreferrer">Открыть сайт вручную</a>` : `<span class="muted">Ссылка не указана</span>`}
+  </article>`;
+}
+
+function unverifiedVehicle(dealer, query) {
+  const filters = query?.filters ?? {};
+  const value = (name) => filters[name]?.value ?? null;
+  const name = [value("make"), value("model"), value("trim"), value("powertrain")]
+    .filter(Boolean).join(" ");
+  return {
+    name: name || "Requested vehicle",
+    year: null,
+    make: value("make"),
+    model: value("model"),
+    trim: value("trim"),
+    drivetrain: value("drivetrain"),
+    powertrain: value("powertrain"),
+    exteriorColor: value("exteriorColor"),
+    requestedAvailability: value("status"),
+    requestedPriceMax: value("priceMax"),
+    status: "Not verified — dealer website unavailable",
+    url: dealer.website,
+    dealer,
+    unverified: true,
+  };
 }
 
 function card(item) {
@@ -286,11 +339,14 @@ function contact(dealer) {
 function vehicleSummary(vehicle) {
   const amount = vehicle.price ?? vehicle.msrp;
   return [
+    vehicle.unverified ? "Note: DJIGIT could not read the dealer website automatically; please check your current inventory." : null,
     vehicle.name || [vehicle.year, vehicle.make, vehicle.model, vehicle.trim].filter(Boolean).join(" "),
     vehicle.vin ? `VIN: ${vehicle.vin}` : null,
     vehicle.stockNumber ? `Stock #: ${vehicle.stockNumber}` : null,
     amount != null ? `Advertised price: $${Number(amount).toLocaleString("en-US")}` : null,
     vehicle.exteriorColor ? `Exterior color: ${vehicle.exteriorColor}` : null,
+    vehicle.requestedAvailability ? `Requested availability: ${vehicle.requestedAvailability}` : null,
+    vehicle.requestedPriceMax != null ? `Maximum requested price: $${Number(vehicle.requestedPriceMax).toLocaleString("en-US")}` : null,
     vehicle.drivetrain ? `Drivetrain: ${vehicle.drivetrain}` : null,
     vehicle.powertrain ? `Engine / powertrain: ${vehicle.powertrain}` : null,
     vehicle.trim ? `Trim: ${vehicle.trim}` : null,
@@ -365,8 +421,6 @@ function applyFreeText() {
     $("model").disabled=false;
     setSelectValue("model", after.match(/^([A-Za-z0-9-]{2,30})/)?.[1] || "");
   }
-  const year=text.match(/\b(19|20)\d{2}\b/)?.[0];
-  if (year) { $("yearMin").value=year; $("yearMax").value=year; }
   const max=text.match(/(?:до|under|up to)\s*\$?\s*([\d,]+)/i)?.[1];
   if (max) $("priceMax").value=max.replaceAll(",","");
   const drive=text.match(/\b(AWD|FWD|RWD|4WD|4x4)\b/i)?.[1];
@@ -376,6 +430,11 @@ function applyFreeText() {
     $("powertrain").value = /diesel|дизель/.test(powertrain) ? "diesel" :
       /hybrid|гибрид/.test(powertrain) ? "hybrid" : "electric";
   }
+  const availability = text.match(/\b(in[ -]?stock|in[ -]?transit|incoming|on[ -]?order)\b/i)?.[1]?.toLowerCase();
+  if (availability) {
+    $("availability").value = /stock/.test(availability) ? "In Stock" :
+      /transit/.test(availability) ? "In Transit" : /incoming/.test(availability) ? "Incoming" : "On Order";
+  }
 }
 function dedupeAndSort(search) {
   const seen=new Set();
@@ -384,10 +443,16 @@ function dedupeAndSort(search) {
   search.close=unique(search.close).sort(resultComparator);
   const failedSeen=new Set();
   search.failed=search.failed.filter((item)=>{
-    const key=`${String(item.dealerName).trim().toLowerCase()}|${String(item.reason).trim().toLowerCase()}`;
+    const key=normalizedWebsite(item.website) || String(item.dealerName).trim().toLowerCase();
     if(failedSeen.has(key))return false;
     failedSeen.add(key);return true;
   });
+}
+function normalizedWebsite(value) {
+  try {
+    const url = new URL(value);
+    return `${url.hostname.replace(/^www\./i, "").toLowerCase()}${url.pathname.replace(/\/+$/, "")}`;
+  } catch { return ""; }
 }
 async function initializeLogin() {
   const config=await fetch(`${API_ORIGIN}/api/auth/config`).then((response)=>response.json());

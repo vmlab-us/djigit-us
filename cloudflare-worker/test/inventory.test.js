@@ -52,6 +52,30 @@ describe("Worker inventory", () => {
     expect(result.exact).toBe(false);
     expect(result.explanations[0]).toContain("White вместо Black");
   });
+  it("treats a selected powertrain as a strict filter", () => {
+    const vehicles = [
+      { name:"2026 Cadillac Escalade Diesel", make:"Cadillac", model:"Escalade", powertrain:"Diesel", dealer },
+      { name:"2026 Cadillac Escalade Gasoline", make:"Cadillac", model:"Escalade", powertrain:"Gasoline", dealer },
+      { name:"2026 Cadillac Escalade PHEV", make:"Cadillac", model:"Escalade", powertrain:"Plug-in Hybrid", dealer },
+      { name:"2026 Cadillac Escalade", make:"Cadillac", model:"Escalade", powertrain:null, dealer },
+    ];
+    const filters = {
+      make:{value:"Cadillac",required:true}, model:{value:"Escalade",required:true},
+      powertrain:{value:"Diesel",required:true},
+    };
+    expect(rank(vehicles, filters).map((item) => item.vehicle.powertrain)).toEqual(["Diesel"]);
+  });
+  it("does not mix hybrid with plug-in hybrid and applies availability strictly", () => {
+    const vehicles = [
+      { name:"RAV4 Hybrid", make:"Toyota", model:"RAV4", powertrain:"Hybrid", status:"In Stock", dealer },
+      { name:"RAV4 Plug-in Hybrid", make:"Toyota", model:"RAV4", powertrain:"Plug-in Hybrid", status:"In Transit", dealer },
+    ];
+    const filters = {
+      make:{value:"Toyota",required:true}, model:{value:"RAV4",required:true},
+      powertrain:{value:"Hybrid",required:true}, status:{value:"In Stock",required:true},
+    };
+    expect(rank(vehicles, filters).map((item) => item.vehicle.name)).toEqual(["RAV4 Hybrid"]);
+  });
   it("rejects a conflicting vehicle title even when a bad model field says GLB", () => {
     const base = {
       make:"Mercedes-Benz", model:"GLB-Class", year:2027, price:52655,

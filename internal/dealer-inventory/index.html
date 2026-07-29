@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
   <title>Поиск автомобилей у дилеров · DJIGIT US</title>
-  <link rel="stylesheet" href="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.css?v=20260724-16">
+  <link rel="stylesheet" href="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.css?v=20260729-19">
   <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
@@ -29,17 +29,14 @@
         <label>Марка <select id="make"><option value="">Выберите марку</option></select></label>
         <label>Модель <select id="model" disabled><option value="">Сначала выберите марку</option></select></label>
         <label>Состояние <select id="condition"><option value="">Любое</option><option>New</option><option>Used</option><option>CPO</option></select></label>
+        <label>Наличие <select id="availability"><option value="">Любое</option><option>In Stock</option><option>In Transit</option><option>Incoming</option><option>On Order</option></select></label>
         <label>Trim <input id="trim" placeholder="XLE"></label>
         <label>Привод <select id="drivetrain"><option value="">Любой</option><option>FWD</option><option>RWD</option><option>AWD</option><option>4WD</option></select></label>
         <label>Двигатель <select id="powertrain"><option value="">Любой</option><option>gasoline</option><option>hybrid</option><option>plug-in hybrid</option><option>electric</option><option>diesel</option></select></label>
-        <label>Год от <input id="yearMin" type="number" min="1980" max="2100"></label>
-        <label>Год до <input id="yearMax" type="number" min="1980" max="2100"></label>
         <label>Цена до <input id="priceMax" type="number" min="0" step="500"></label>
-        <label>Пробег до <input id="mileageMax" type="number" min="0" step="1000"></label>
         <label>Цвет кузова <input id="exteriorColor"></label>
-        <label>Расстояние до, миль <input id="distance" type="number" min="1"></label>
       </div>
-      <details><summary>Как учитываются параметры</summary><p>Марка и модель обязательны. Указанное состояние также обязательно. Остальные параметры используются как желательные для ранжирования близких вариантов.</p></details>
+      <details><summary>Как учитываются параметры</summary><p>Каждый заполненный фильтр обязателен. Если параметр не указан или не подтверждён на сайте дилера, автомобиль не попадёт в отфильтрованную выдачу.</p></details>
       <div class="actions"><button id="submit" type="submit">Найти у дилеров</button><button id="refresh" type="button" class="secondary">Обновить справочники</button><button id="cancel" type="button" class="danger" hidden>Отменить</button></div>
       <p id="directoryStatus" class="muted">Загрузка справочника…</p>
     </form>
@@ -64,6 +61,6 @@
     </section>
   </main>
   </div>
-  <script type="module" src="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.js?v=20260724-16"></script>
+  <script type="module" src="https://djigit-dealer-inventory.djigit-us.workers.dev/internal/dealer-inventory/assets/app.js?v=20260729-20"></script>
 </body>
 </html>
